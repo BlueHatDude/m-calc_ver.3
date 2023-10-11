@@ -9,11 +9,24 @@
 
 
     typedef enum MC3_ErrorCode {
+        NO_ERROR,
+        NOT_ENOUGH_SPACE,
         DIV_BY_ZERO,
     } MC3_ErrorCode;
 
 
+    void MC3_RUN();
     double MC3_evaluate(const char *equation);
+
+    #include <string.h>
+    static inline bool_t charInStr(const char argChar, const char argStr[]) {
+        const size_t strLen = strlen(argStr);
+        for(unsigned i = 0; i < strLen; ++i) {
+            if(argChar == argStr[i])
+                return TRUE;
+        }
+        return FALSE;
+    }
 
 
 #endif

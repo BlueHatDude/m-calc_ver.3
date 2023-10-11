@@ -4,8 +4,8 @@
 
 #include <stdio.h>
 int main(const int argc, const char* argv[]) {
-  for(unsigned i = 1; i < (unsigned) argc; ++i) {
-    printf("%d: %s \n", i, argv[i]);
-  }
+  (void) argc;
+  (void) argv;
+  MC3_RUN();
 }
 
