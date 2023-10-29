@@ -15,8 +15,10 @@
     } MC3_ErrorCode;
 
 
-    void MC3_RUN();
+    void MC3_RUN(void);
+    void MC3_TESTS(void);
     double MC3_evaluate(const char *equation);
+
 
     #include <string.h>
     static inline bool_t charInStr(const char argChar, const char argStr[]) {

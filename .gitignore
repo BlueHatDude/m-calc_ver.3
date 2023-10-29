@@ -35,6 +35,8 @@
 *.i*86
 *.x86_64
 *.hex
+mcalc3
+mcalc3_tests
 
 # Debug files
 *.dSYM/
@@ -50,7 +52,6 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
-mcalc3
 
 # Visual Studio Code
 /.vscode
