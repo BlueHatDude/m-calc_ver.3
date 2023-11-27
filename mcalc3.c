@@ -12,7 +12,8 @@ enum MC3_EquTknIdentifier {
   L_PAR,
   R_PAR,
   INTEGER,
-  DECIMAL
+  DECIMAL,
+  VARIABLE // not yet implemented
 };
 
 
@@ -27,11 +28,11 @@ enum MC3_EquTknSubType {
 
 typedef struct MC3_EquToken {
   enum MC3_EquTknIdentifier type;
-
   
   union {
     int64_t ivalue;
     float64_t fvalue;
+    unsigned char varname;
 
     enum MC3_EquTknSubType subtype;
   };
@@ -39,20 +40,20 @@ typedef struct MC3_EquToken {
 
 
 enum OpsNParsArrType {
-  INDEX_TRACKERS    = 0,
-  LEFT_PARENTHESIS  = 1,
-  RIGHT_PARENTHESIS = 2,
-  EXPONENT          = 3,
-  MULT_AND_DIV      = 4,
-  ADD_AND_SUB       = 5,
+  AT__INDEX_TRACKERS    = 0,
+  AT__LEFT_PARENTHESIS  = 1,
+  AT__RIGHT_PARENTHESIS = 2,
+  AT__EXPONENT          = 3,
+  AT__MULT_AND_DIV      = 4,
+  AT__ADD_AND_SUB       = 5,
 };
 
 
 enum OpsNParsPtrType{
-  PARENTHESIS = 0,
-  EXPONENTS   = 1,
-  MULT_N_DIVS = 2,
-  ADD_N_SUB   = 3,
+  PT__PARENTHESIS = 0,
+  PT__EXPONENTS   = 1,
+  PT__MULT_N_DIVS = 2,
+  PT__ADD_N_SUB   = 3,
 };
 
 
@@ -73,6 +74,12 @@ enum OpsNParsPtrType{
 */
 
 
+static inline void clearTokens(MC3_EquToken tokens[], size_t size) {
+  for(unsigned i = 0; i < size; ++i)
+    tokens[i].type = EMPTY;
+}
+
+
 static inline MC3_ErrorCode appendEquTkn(MC3_EquToken tokens[], MC3_EquToken token, size_t maxSize) {
   unsigned i = 0;
   while( tokens[i].type != EMPTY ) {
@@ -87,7 +94,7 @@ static inline MC3_ErrorCode appendEquTkn(MC3_EquToken tokens[], MC3_EquToken tok
 }
 
 
-static MC3_ErrorCode read_equ(const char equ[], MC3_EquToken tokens[], const size_t len) {
+static MC3_ErrorCode readEqu(const char equ[], MC3_EquToken tokens[], const size_t len) {
   const size_t strLen = strlen(equ);
   MC3_EquToken temp_token = { .type = EMPTY };
   char str_num[15] = "              "; // 14 width empty string
@@ -163,7 +170,7 @@ static MC3_ErrorCode read_equ(const char equ[], MC3_EquToken tokens[], const siz
 }
 
 
-static MC3_ErrorCode read_ops_and_pars(MC3_EquToken tokens[], int8_t ops_and_pars[6][8]) {
+static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], int8_t ops_and_pars[6][8]) {
   size_t tokensEnd = 0;
   while(tokens[tokensEnd].type != EMPTY)
     tokensEnd++;
@@ -172,33 +179,33 @@ static MC3_ErrorCode read_ops_and_pars(MC3_EquToken tokens[], int8_t ops_and_par
     if(tokens[i].type == OPERATOR) {
       switch(tokens[i].subtype) {
         case OP_PLUS:
-          ops_and_pars[ADD_AND_SUB][ ops_and_pars[INDEX_TRACKERS][ADD_AND_SUB] ] = i;
-          ops_and_pars[INDEX_TRACKERS][ADD_AND_SUB]++;
+          ops_and_pars[AT__ADD_AND_SUB][ ops_and_pars[AT__INDEX_TRACKERS][AT__ADD_AND_SUB] ] = i;
+          ops_and_pars[AT__INDEX_TRACKERS][AT__ADD_AND_SUB]++;
           break;
         case OP_MINUS:
-          ops_and_pars[ADD_AND_SUB][ ops_and_pars[INDEX_TRACKERS][ADD_AND_SUB] ] = i;
-          ops_and_pars[INDEX_TRACKERS][ADD_AND_SUB]++;
+          ops_and_pars[AT__ADD_AND_SUB][ ops_and_pars[AT__INDEX_TRACKERS][AT__ADD_AND_SUB] ] = i;
+          ops_and_pars[AT__INDEX_TRACKERS][AT__ADD_AND_SUB]++;
           break;
         case OP_MULTIPLY:
-          ops_and_pars[MULT_AND_DIV][ ops_and_pars[INDEX_TRACKERS][MULT_N_DIVS] ] = i;
-          ops_and_pars[INDEX_TRACKERS][MULT_N_DIVS]++;
+          ops_and_pars[AT__MULT_AND_DIV][ ops_and_pars[AT__INDEX_TRACKERS][PT__MULT_N_DIVS] ] = i;
+          ops_and_pars[AT__INDEX_TRACKERS][PT__MULT_N_DIVS]++;
           break;
         case OP_DIVIDE:
-          ops_and_pars[MULT_AND_DIV][ ops_and_pars[INDEX_TRACKERS][MULT_N_DIVS] ] = i;
-          ops_and_pars[INDEX_TRACKERS][MULT_N_DIVS]++;
+          ops_and_pars[AT__MULT_AND_DIV][ ops_and_pars[AT__INDEX_TRACKERS][PT__MULT_N_DIVS] ] = i;
+          ops_and_pars[AT__INDEX_TRACKERS][PT__MULT_N_DIVS]++;
           break;
         case OP_EXPONENT:
-          ops_and_pars[EXPONENT][ ops_and_pars[INDEX_TRACKERS][EXPONENTS] ] = i;
-          ops_and_pars[INDEX_TRACKERS][EXPONENTS]++;
+          ops_and_pars[AT__EXPONENT][ ops_and_pars[AT__INDEX_TRACKERS][PT__EXPONENTS] ] = i;
+          ops_and_pars[AT__INDEX_TRACKERS][PT__EXPONENTS]++;
           break;
       }
     } else if(tokens[i].type == L_PAR) {
       size_t temp_index = i;
       while(tokens[temp_index].type != R_PAR) temp_index++;
 
-      ops_and_pars[LEFT_PARENTHESIS][ ops_and_pars[INDEX_TRACKERS][PARENTHESIS] ] = i;
-      ops_and_pars[RIGHT_PARENTHESIS][ ops_and_pars[INDEX_TRACKERS][PARENTHESIS] ] = temp_index;
-      ops_and_pars[INDEX_TRACKERS][PARENTHESIS]++;
+      ops_and_pars[AT__LEFT_PARENTHESIS][ ops_and_pars[AT__INDEX_TRACKERS][PT__PARENTHESIS] ] = i;
+      ops_and_pars[AT__RIGHT_PARENTHESIS][ ops_and_pars[AT__INDEX_TRACKERS][PT__PARENTHESIS] ] = temp_index;
+      ops_and_pars[AT__INDEX_TRACKERS][PT__PARENTHESIS]++;
     } 
   }
 
@@ -206,14 +213,14 @@ static MC3_ErrorCode read_ops_and_pars(MC3_EquToken tokens[], int8_t ops_and_par
 }
 
 
-void DEBUGGING_logTokens(MC3_EquToken tokens[], size_t size) {  
+void __logTokens(MC3_EquToken tokens[], size_t size) {  
   for(unsigned i = 0; i < size; ++i) {
     switch(tokens[i].type) {
       case EMPTY:
         printf("Index: %2d | Type: EMPTY \n", i);
         break;
       case INTEGER:
-        printf("Index: %2d | Type: INTEGER | ivalue: %ld \n", i, tokens[i].ivalue);
+        printf("Index: %2d | Type: INTEGER | ivalue: %lld \n", i, tokens[i].ivalue);
         break;
       case DECIMAL:
         printf("Index: %2d | Type: DECIMAL | fvalue: %lf \n", i, tokens[i].fvalue);
@@ -271,23 +278,102 @@ void MC3_RUN(void) {
   for(unsigned i = 0; i < tokensSize; ++i)
     tokens[i].type = EMPTY;
 
-  read_equ("4.5 + 4", tokens, tokensSize);
-  read_ops_and_pars(tokens, ops_n_pars);
+  readEqu("4.5 + 4", tokens, tokensSize);
+  readOpsAndPars(tokens, ops_n_pars);
 }
 
 
 void MC3_TESTS(void) {
   MC3_EquToken tokens[25];
-  const size_t len = sizeof(tokens) / sizeof(tokens[0]);
+  int8_t ops_n_pars[6][8] = {
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0, 0, 0, 0, 0, 0, 0 },
+  };
+  const size_t tokensLen = sizeof(tokens) / sizeof(tokens[0]);
+  clearTokens(tokens, tokensLen);
 
-  /* read_equ */
-  read_equ("2 + 4", tokens, len);
-  MLOG_output_test("2 + 4 properly tokenized", TRUE,
-    (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
-    && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
-    && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
-  );
+  /* readEqu */
+  // Single Digits | Single Addition Operator
+    readEqu("2 + 4", tokens, tokensLen);
+    MLOG_output_test("2 + 4 properly tokenized", TRUE,
+      (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
+      && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
+      && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
+    );
+    clearTokens(tokens, tokensLen);
+  // Single Digits | Single Subtraction Operator
+    readEqu("2 - 4", tokens, tokensLen);
+    MLOG_output_test("2 - 4 properly tokenized", TRUE,
+      (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
+      && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_MINUS)
+      && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
+    );
+    clearTokens(tokens, tokensLen);
+  // Single Digits | Single Multiplication Operator
+    readEqu("2 * 4", tokens, tokensLen);
+    MLOG_output_test("2 * 4 properly tokenized", TRUE,
+      (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
+      && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_MULTIPLY)
+      && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
+    );
+    clearTokens(tokens, tokensLen);
+  // Single Digits | Single Division Operator
+    readEqu("2 + 4", tokens, tokensLen);
+    MLOG_output_test("2 + 4 properly tokenized", TRUE,
+      (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
+      && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
+      && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
+    );
+    clearTokens(tokens, tokensLen);
+  // Single Digits | Single Exponent Operator
+    readEqu("2 + 4", tokens, tokensLen);
+    MLOG_output_test("2 + 4 properly tokenized", TRUE,
+      (tokens[0].type == INTEGER && tokens[0].ivalue == 2)
+      && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
+      && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
+    );
+    clearTokens(tokens, tokensLen);
 
+  clearTokens(tokens, tokensLen);
 
+  /* readOpsAndPars */
+  // Single Addition Operator
+    readEqu("2 + 4", tokens, tokensLen);
+    readOpsAndPars(tokens, ops_n_pars);
+    MLOG_output_test("readsOpsNPars for 2 + 4", TRUE,\
+                    (ops_n_pars[AT__ADD_AND_SUB][0] == 1));
+    clearTokens(tokens, tokensLen);
+  
+  // Single Subtraction Operator
+    readEqu("2 - 4", tokens, tokensLen);
+    readOpsAndPars(tokens, ops_n_pars);
+    MLOG_output_test("readsOpsNPars for 2 - 4", TRUE,\
+                    (ops_n_pars[AT__ADD_AND_SUB][0] == 1));
+    clearTokens(tokens, tokensLen);
+
+  // Single Multiplication Operator
+    readEqu("2 * 4", tokens, tokensLen);
+    readOpsAndPars(tokens, ops_n_pars);
+    MLOG_output_test("readsOpsNPars for 2 * 4", TRUE,\
+                    (ops_n_pars[AT__MULT_AND_DIV][0] == 1));
+    clearTokens(tokens, tokensLen);
+  
+  // Single Division Operator
+    readEqu("2 * 4", tokens, tokensLen);
+    readOpsAndPars(tokens, ops_n_pars);
+    MLOG_output_test("readsOpsNPars for 2 * 4", TRUE,\
+                    (ops_n_pars[AT__MULT_AND_DIV][0] == 1));
+    clearTokens(tokens, tokensLen);
+  
+  // Single Exponent Operator
+    readEqu("2 ^ 4", tokens, tokensLen);
+    readOpsAndPars(tokens, ops_n_pars);
+    MLOG_output_test("readsOpsNPars for 2 ^ 4", TRUE,\
+                    (ops_n_pars[AT__EXPONENT][0] == 1));
+    clearTokens(tokens, tokensLen);
 }
 
