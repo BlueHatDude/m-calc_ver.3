@@ -173,7 +173,7 @@ static MC3_ErrorCode readEqu(const char equ[], MC3_EquToken tokens[], const size
 }
 
 
-static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], int8_t ops_and_pars[6][8]) {
+static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], uint8_t ops_and_pars[6][8]) {
   size_t tokensEnd = 0;
   while (tokens[tokensEnd].type != EMPTY)
     tokensEnd++;
@@ -221,14 +221,14 @@ static void subEvaluateOps(void) {
 }
 
 
-static void evaluateOps(int8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
-  int8_t writtenUpTo = 0;
+static void evaluateOps(uint8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
+  uint8_t writtenUpTo = 0;
   (void) tokens;
 
   // Parenthesis
   writtenUpTo = opsAndPars[AT__INDEX_TRACKERS][PT__PARENTHESIS];
   for(size_t i = 0; i < (size_t) writtenUpTo; ++i) {
-
+    
   }
   // Exponents
   // Multiplication & Division
@@ -281,7 +281,7 @@ void __logTokens(MC3_EquToken tokens[], size_t size) {
 }
 
 
-void __logOpsAndPars(int8_t ops_and_pars[6][8]) {
+void __logOpsAndPars(uint8_t ops_and_pars[6][8]) {
   for (unsigned i = 0; i < 6; ++i) {
     printf("%d: [", i);
     for (unsigned j = 0; j < 8; ++j) {
@@ -296,7 +296,7 @@ double MC3_evaluate(const char *equation) {
   MC3_EquToken tokens[25];
   const size_t tokensSize = sizeof(tokens)/sizeof(tokens[0]);
   clearTokens(tokens, tokensSize);
-  int8_t ops_n_pars[6][8] = {
+  uint8_t ops_n_pars[6][8] = {
     { 0, 0, 0, 0, 0, 0, 0, 0 },    
     { 0, 0, 0, 0, 0, 0, 0, 0 },    
     { 0, 0, 0, 0, 0, 0, 0, 0 },    
@@ -315,7 +315,7 @@ double MC3_evaluate(const char *equation) {
 void MC3_RUN(void) {
   MC3_EquToken tokens[25];
   // operators and parenthesis
-  int8_t ops_n_pars[6][8] = {
+  uint8_t ops_n_pars[6][8] = {
     {0, 0, 0, 0, 0, 0, 0, 0}, // left parenthesis
     {0, 0, 0, 0, 0, 0, 0, 0}, // right parenthesis
     {0, 0, 0, 0, 0, 0, 0, 0}, // exponents
@@ -340,7 +340,7 @@ void MC3_RUN(void) {
 
 void MC3_TESTS(void) {
   MC3_EquToken tokens[25];
-  int8_t ops_n_pars[6][8] = {
+  uint8_t ops_n_pars[6][8] = {
     { 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0 },
     { 0, 0, 0, 0, 0, 0, 0, 0 },
