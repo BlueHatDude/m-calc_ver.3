@@ -216,8 +216,15 @@ static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], uint8_t ops_and_pars[
 }
 
 
-static void subEvaluateOps(void) {
-  ;;;
+static MC3_ErrorCode subEvaluateOp(MC3_EquToken tokens[], const size_t index) {
+  size_t before = index;
+  size_t after = index;
+
+  while (tokens[before].type != INTEGER && tokens[before].type != DECIMAL) {
+    ;;;
+  }
+  
+  return NO_ERROR;
 }
 
 
@@ -227,12 +234,43 @@ static void evaluateOps(uint8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
 
   // Parenthesis
   writtenUpTo = opsAndPars[AT__INDEX_TRACKERS][PT__PARENTHESIS];
-  for(size_t i = 0; i < (size_t) writtenUpTo; ++i) {
-    
+  for (size_t i = 0; i < writtenUpTo; ++i) {
+    const uint8_t l_par_pos = opsAndPars[AT__LEFT_PARENTHESIS][i];
+    const uint8_t r_par_pos = opsAndPars[AT__RIGHT_PARENTHESIS][i];
+
+    size_t j = 0;
+    // Exponents 
+    while ( opsAndPars[AT__EXPONENT][j] > l_par_pos && opsAndPars[AT__EXPONENT][j] < r_par_pos) {
+      subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
+      j++;
+    }
+    // Multiplication & Division
+    while ( opsAndPars[AT__MULT_AND_DIV][j] > l_par_pos && opsAndPars[AT__MULT_AND_DIV][j] < r_par_pos) {
+      subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
+      j++;
+    }
+    // Addition & Subtraction
+    while ( opsAndPars[AT__ADD_AND_SUB][j] > l_par_pos && opsAndPars[AT__ADD_AND_SUB][j] < r_par_pos) {
+      subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
+      j++;
+    }
+
   }
-  // Exponents
+  // Exponents 
+  writtenUpTo = opsAndPars[AT__INDEX_TRACKERS][PT__EXPONENTS];
+  for (size_t i = 0; i < writtenUpTo; ++i) {
+    subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
+  }
   // Multiplication & Division
+  writtenUpTo = opsAndPars[AT__MULT_AND_DIV][PT__EXPONENTS];
+  for (size_t i = 0; i < writtenUpTo; ++i) {
+    subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
+  }
   // Addition & Subtraction
+  writtenUpTo = opsAndPars[AT__MULT_AND_DIV][PT__EXPONENTS];
+  for (size_t i = 0; i < writtenUpTo; ++i) {
+    subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
+  }
 }
 
 
@@ -275,6 +313,9 @@ void __logTokens(MC3_EquToken tokens[], size_t size) {
             printf("Index: %2d | Type: OP_EXPONENT \n", i);
             break;
         }
+        break;
+      default:
+        printf("Index: %2d | Type: UNIDENTIFIED TOKEN \n", i);
         break;
     }    
   } 
@@ -322,19 +363,16 @@ void MC3_RUN(void) {
     {0, 0, 0, 0, 0, 0, 0, 0}, // multiplication and division
     {0, 0, 0, 0, 0, 0, 0, 0}, // addition and subtraction
   };
-  (void) ops_n_pars;
-
   const size_t tokensSize = sizeof(tokens)/sizeof(tokens[0]);
+  clearTokens(tokens, tokensSize);
+  
   for(unsigned i = 0; i < tokensSize; ++i)
     tokens[i].type = EMPTY;
 
-  readEqu("(4.5) * 2", tokens, tokensSize);
+  readEqu("(2 + 4) * (2 ^ 2 / 8)", tokens, tokensSize);
   readOpsAndPars(tokens, ops_n_pars);
-  __logOpsAndPars(ops_n_pars);
-
-  return;
   evaluateOps(ops_n_pars, tokens);
-  subEvaluateOps();
+
 }
 
 
