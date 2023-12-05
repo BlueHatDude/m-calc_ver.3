@@ -281,7 +281,7 @@ void __logTokens(MC3_EquToken tokens[], size_t size) {
         printf("Index: %2d | Type: EMPTY \n", i);
         break;
       case INTEGER:
-        printf("Index: %2d | Type: INTEGER | ivalue: %lld \n", i, tokens[i].ivalue);
+        printf("Index: %2d | Type: INTEGER | ivalue: %lld \n", i, (long long) tokens[i].ivalue);
         break;
       case DECIMAL:
         printf("Index: %2d | Type: DECIMAL | fvalue: %lf \n", i, tokens[i].fvalue);
