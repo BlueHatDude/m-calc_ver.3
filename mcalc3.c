@@ -216,76 +216,70 @@ static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], uint8_t ops_and_pars[
 }
 
 
+enum NumTypes {
+  INT_THEN_INT,
+  DECIMAL_THEN_DECIMAL,
+  INT_THEN_DECIMAL,
+  DECIMAL_THEN_INT,
+}; 
+
+
 static void evalOp(MC3_EquToken tokens[], const size_t index, const size_t before, const size_t after) {
+  
   switch (tokens[index].subtype) {
     case OP_PLUS: {
-      if (tokens[before].subtype == INTEGER && tokens[after].subtype == INTEGER) {
+      if ( (tokens[before].type == INTEGER) && (tokens[after].type == DECIMAL) ) {
         tokens[index].type = INTEGER;
-        tokens[index].ivalue = tokens[before].ivalue + tokens[after].ivalue; 
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == DECIMAL) {
+        tokens[index].ivalue = tokens[before].ivalue + tokens[after].ivalue;
+      } else {
         tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue + tokens[after].fvalue;
-      } else if (tokens[before].subtype == INTEGER && tokens[after].subtype == DECIMAL) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].ivalue + tokens[after].fvalue;
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == INTEGER) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue + tokens[after].ivalue;
+        tokens[index].fvalue = ( (tokens[before].type == INTEGER) ? tokens[before].ivalue : tokens[before].fvalue )\
+        + ( (tokens[after].type == INTEGER) ? tokens[after].ivalue : tokens[after].fvalue );
       }
       break;
     }
     case OP_MINUS: {
-      if (tokens[before].subtype == INTEGER && tokens[after].subtype == INTEGER) {
+      if ( (tokens[before].type == INTEGER) && (tokens[after].type == DECIMAL) ) {
         tokens[index].type = INTEGER;
-        tokens[index].ivalue = tokens[before].ivalue - tokens[after].ivalue; 
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == DECIMAL) {
+        tokens[index].ivalue = tokens[before].ivalue - tokens[after].ivalue;
+      } else {
         tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue - tokens[after].fvalue;
-      } else if (tokens[before].subtype == INTEGER && tokens[after].subtype == DECIMAL) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].ivalue - tokens[after].fvalue;
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == INTEGER) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue - tokens[after].ivalue;
+        tokens[index].fvalue = ( (tokens[before].type == INTEGER) ? tokens[before].ivalue : tokens[before].fvalue )\
+        - ( (tokens[after].type == INTEGER) ? tokens[after].ivalue : tokens[after].fvalue );
       }
       break;
     }
-    case OP_MULTIPLY: {
-      if (tokens[before].subtype == INTEGER && tokens[after].subtype == INTEGER) {
+    case OP_MULTIPLY: {      
+      if ( (tokens[before].type == INTEGER) && (tokens[after].type == DECIMAL) ) {
         tokens[index].type = INTEGER;
-        tokens[index].ivalue = tokens[before].ivalue * tokens[after].ivalue; 
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == DECIMAL) {
+        tokens[index].ivalue = tokens[before].ivalue * tokens[after].ivalue;
+      } else {
         tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue * tokens[after].fvalue;
-      } else if (tokens[before].subtype == INTEGER && tokens[after].subtype == DECIMAL) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].ivalue * tokens[after].fvalue;
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == INTEGER) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue * tokens[after].ivalue;
+        tokens[index].fvalue = ( (tokens[before].type == INTEGER) ? tokens[before].ivalue : tokens[before].fvalue )\
+        * ( (tokens[after].type == INTEGER) ? tokens[after].ivalue : tokens[after].fvalue );
       }
       break;
     }
     case OP_DIVIDE: {
-      if (tokens[before].subtype == INTEGER && tokens[after].subtype == INTEGER) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].ivalue + tokens[after].ivalue; 
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == DECIMAL) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue + tokens[after].fvalue;
-      } else if (tokens[before].subtype == INTEGER && tokens[after].subtype == DECIMAL) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].ivalue + tokens[after].fvalue;
-      } else if (tokens[before].subtype == DECIMAL && tokens[after].subtype == INTEGER) {
-        tokens[index].type = DECIMAL;
-        tokens[index].fvalue = tokens[before].fvalue + tokens[after].ivalue;
-      }
+      tokens[index].type = DECIMAL;
+      tokens[index].fvalue = ( (tokens[before].type == INTEGER) ? tokens[before].ivalue : tokens[before].fvalue )\
+      + ( (tokens[after].type == INTEGER) ? tokens[after].ivalue : tokens[after].fvalue );
       break;
     }
     case OP_EXPONENT: {
+      if ( (tokens[before].type == INTEGER) && (tokens[after].type == DECIMAL) ) {
+        tokens[index].type = INTEGER;
+        tokens[index].ivalue = tokens[before].ivalue + tokens[after].ivalue;
+      } else {
+        tokens[index].fvalue = ( (tokens[before].type == INTEGER) ? tokens[before].ivalue : tokens[before].fvalue )\
+        + ( (tokens[after].type == INTEGER) ? tokens[after].ivalue : tokens[after].fvalue );
+      }
       break;
     }
   }
+
+  tokens[before].type = EMPTY;
+  tokens[after].type = EMPTY;
 }
 
 
@@ -293,28 +287,12 @@ static MC3_ErrorCode subEvaluateOp(MC3_EquToken tokens[], const size_t index) {
   size_t before = index;
   size_t after = index;
 
-  // (void) before;
-  (void) after;
-  (void) tokens;
-
   while (tokens[before].type != INTEGER && tokens[before].type != DECIMAL)
     before--;
   while (tokens[after].type != INTEGER && tokens[after].type != DECIMAL)
     after++;
 
-  switch (tokens[index].subtype) {
-    case OP_PLUS:
-        
-      break;
-    case OP_MINUS:
-      break;
-    case OP_MULTIPLY: 
-      break;
-    case OP_DIVIDE:
-      break;
-    case OP_EXPONENT: 
-      break;
-  }
+  evalOp(tokens, index, before, after);
 
   return NO_ERROR;
 }
@@ -426,7 +404,7 @@ static void __logOpsAndPars(uint8_t ops_and_pars[6][8]) {
 
 
 static void checkErrors(MC3_ErrorCode code) {
-  ;;;
+  (void) code;
 } 
 
 
@@ -442,10 +420,13 @@ double MC3_evaluate(const char *equation) {
     { 0, 0, 0, 0, 0, 0, 0, 0 },    
     { 0, 0, 0, 0, 0, 0, 0, 0 },    
   };
-  
-  readEqu(equation, tokens, tokensSize);
-  readOpsAndPars(tokens, ops_n_pars);
-
+  MC3_ErrorCode error_code = NO_ERROR;
+   
+  error_code = readEqu(equation, tokens, tokensSize);
+  checkErrors(error_code);
+  error_code = readOpsAndPars(tokens, ops_n_pars);
+  checkErrors(error_code);
+ 
   return -0.0;
 } 
 
@@ -469,7 +450,10 @@ void MC3_RUN(void) {
   readEqu("(2 + 4) * (2 ^ 2 / 8)", tokens, tokensSize);
   readOpsAndPars(tokens, ops_n_pars);
   evaluateOps(ops_n_pars, tokens);
+
+  return;
   __logTokens(tokens, tokensSize);
+  __logOpsAndPars(ops_n_pars);
 }
 
 
