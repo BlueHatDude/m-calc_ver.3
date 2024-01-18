@@ -74,12 +74,6 @@ enum OpsNParsPtrType{
 */
 
 
-static inline void clearTokens(MC3_EquToken tokens[], size_t size) {
-    for(unsigned i = 0; i < size; ++i)
-        tokens[i].type = EMPTY;
-}
-
-
 static inline MC3_ErrorCode appendEquTkn(MC3_EquToken tokens[], MC3_EquToken token, size_t maxSize) {
     unsigned i = 0;
     while( tokens[i].type != EMPTY ) {
@@ -94,13 +88,13 @@ static inline MC3_ErrorCode appendEquTkn(MC3_EquToken tokens[], MC3_EquToken tok
 }
 
 
-static MC3_ErrorCode readEqu(const char equ[], MC3_EquToken tokens[], const size_t len) {
+MC3_ErrorCode readEqu(const char equ[], MC3_EquToken tokens[], const size_t len) {
     const size_t strLen = strlen(equ);
     MC3_EquToken temp_token = { .type = EMPTY };
     char str_num[15] = "              "; // 14 width empty string
     MC3_ErrorCode error_code = NO_ERROR;
     
-    for(unsigned i = 0; i < strLen; ++i) {
+    for (unsigned i = 0; i < strLen; ++i) {
         switch(equ[i]) {
             case '+':
                 temp_token.type = OPERATOR;
@@ -173,7 +167,7 @@ static MC3_ErrorCode readEqu(const char equ[], MC3_EquToken tokens[], const size
 }
 
 
-static MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], uint8_t ops_and_pars[6][8]) {
+MC3_ErrorCode readOpsAndPars(MC3_EquToken tokens[], uint8_t ops_and_pars[6][8]) {
     size_t tokensEnd = 0;
     while (tokens[tokensEnd].type != EMPTY)
         tokensEnd++;
@@ -224,7 +218,7 @@ enum NumTypes {
 }; 
 
 
-static void evalOp(MC3_EquToken tokens[], const size_t index, const size_t before, const size_t after) {
+void evalOp(MC3_EquToken tokens[], const size_t index, const size_t before, const size_t after) {
     
     switch (tokens[index].subtype) {
         case OP_PLUS: {
@@ -283,7 +277,7 @@ static void evalOp(MC3_EquToken tokens[], const size_t index, const size_t befor
 }
 
 
-static MC3_ErrorCode subEvaluateOp(MC3_EquToken tokens[], const size_t index) {
+MC3_ErrorCode subEvaluateOp(MC3_EquToken tokens[], const size_t index) {
     size_t before = index;
     size_t after = index;
 
@@ -298,53 +292,17 @@ static MC3_ErrorCode subEvaluateOp(MC3_EquToken tokens[], const size_t index) {
 }
 
 
-static void evaluateOps(uint8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
+void evaluateOps(uint8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
     uint8_t writtenUpTo = 0;
     (void) tokens;
+    (void) opsAndPars;
 
-    // Parenthesis
-    writtenUpTo = opsAndPars[AT__INDEX_TRACKERS][PT__PARENTHESIS];
-    for (size_t i = 0; i < writtenUpTo; ++i) {
-        const uint8_t l_par_pos = opsAndPars[AT__LEFT_PARENTHESIS][i];
-        const uint8_t r_par_pos = opsAndPars[AT__RIGHT_PARENTHESIS][i];
-
-        size_t j = 0;
-        // Exponents 
-        while ( opsAndPars[AT__EXPONENT][j] > l_par_pos && opsAndPars[AT__EXPONENT][j] < r_par_pos) {
-            subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
-            j++;
-        }
-        // Multiplication & Division
-        while ( opsAndPars[AT__MULT_AND_DIV][j] > l_par_pos && opsAndPars[AT__MULT_AND_DIV][j] < r_par_pos) {
-            subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
-            j++;
-        }
-        // Addition & Subtraction
-        while ( opsAndPars[AT__ADD_AND_SUB][j] > l_par_pos && opsAndPars[AT__ADD_AND_SUB][j] < r_par_pos) {
-            subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][j]);
-            j++;
-        }
-
-    }
-    // Exponents 
-    writtenUpTo = opsAndPars[AT__INDEX_TRACKERS][PT__EXPONENTS];
-    for (size_t i = 0; i < writtenUpTo; ++i) {
-        subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
-    }
-    // Multiplication & Division
-    writtenUpTo = opsAndPars[AT__MULT_AND_DIV][PT__EXPONENTS];
-    for (size_t i = 0; i < writtenUpTo; ++i) {
-        subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
-    }
-    // Addition & Subtraction
-    writtenUpTo = opsAndPars[AT__MULT_AND_DIV][PT__EXPONENTS];
-    for (size_t i = 0; i < writtenUpTo; ++i) {
-        subEvaluateOp(tokens, opsAndPars[AT__EXPONENT][i]);
-    }
+    return;
+    subEvaluateOp(tokens, 0x00);
 }
 
 
-static void __logTokens(MC3_EquToken tokens[], size_t size) {
+void __logTokens(MC3_EquToken tokens[], size_t size) {
     for(unsigned i = 0; i < size; ++i) {
         switch(tokens[i].type) {
             case EMPTY:
@@ -392,7 +350,7 @@ static void __logTokens(MC3_EquToken tokens[], size_t size) {
 }
 
 
-static void __logOpsAndPars(uint8_t ops_and_pars[6][8]) {
+void __logOpsAndPars(uint8_t ops_and_pars[6][8]) {
     for (unsigned i = 0; i < 6; ++i) {
         printf("%d: [", i);
         for (unsigned j = 0; j < 8; ++j) {
@@ -403,7 +361,7 @@ static void __logOpsAndPars(uint8_t ops_and_pars[6][8]) {
 }
 
 
-static void checkErrors(MC3_ErrorCode code) {
+void checkErrors(MC3_ErrorCode code) {
     (void) code;
 } 
 
@@ -431,29 +389,63 @@ double MC3_evaluate(const char *equation) {
 } 
 
 
-void MC3_RUN(void) {
-    MC3_EquToken tokens[25];
-    // operators and parenthesis
-    uint8_t ops_n_pars[6][8] = {
-        {0, 0, 0, 0, 0, 0, 0, 0}, // left parenthesis
-        {0, 0, 0, 0, 0, 0, 0, 0}, // right parenthesis
-        {0, 0, 0, 0, 0, 0, 0, 0}, // exponents
-        {0, 0, 0, 0, 0, 0, 0, 0}, // multiplication and division
-        {0, 0, 0, 0, 0, 0, 0, 0}, // addition and subtraction
-    };
-    const size_t tokensSize = sizeof(tokens)/sizeof(tokens[0]);
-    clearTokens(tokens, tokensSize);
-    
-    for(unsigned i = 0; i < tokensSize; ++i)
+/**
+ * @brief sets all tokens to type 'EMPTY'
+ * 
+ * @param tokens 
+ * @param size 
+ */
+static inline void MC3_initTokens(MC3_EquToken tokens[], const size_t size) {
+    for (size_t i = 0; i < size; ++i) {
         tokens[i].type = EMPTY;
+    }
+}
 
+
+static inline void MC3_initOpsNPars(uint8_t nums[6][8], const size_t rows, const size_t columns) {
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < columns; ++j) {
+            nums[i][j] = 0;
+        }
+    }
+}
+
+
+void DEBUGGING_printOpsNPars(const uint8_t nums[6][8]) {
+    puts("Operators & Parenthesis");
+    
+    /*
+        uint8_t ops_n_pars[6][8] = {
+            {0, 0, 0, 0, 0, 0, 0, 0}, // left parenthesis
+            {0, 0, 0, 0, 0, 0, 0, 0}, // right parenthesis
+            {0, 0, 0, 0, 0, 0, 0, 0}, // exponents
+            {0, 0, 0, 0, 0, 0, 0, 0}, // multiplication and division
+            {0, 0, 0, 0, 0, 0, 0, 0}, // addition and subtraction
+        };
+    */
+    
+    for (size_t i = 0; i < 6; ++i) {
+        printf("%zu: [", i);
+        for (size_t j = 0; j < 8; ++j) {
+            printf("%d%s \n", nums[i][j], (j == (8 - 1)) ? " " : ", ");
+        }
+        printf("]\n");
+    }
+}
+
+
+void MC3_RUN(void) {
+    /* Intialization */
+    MC3_EquToken tokens[25];
+    const size_t tokensSize = sizeof(tokens)/sizeof(tokens[0]);
+    MC3_initTokens(tokens, tokensSize);
+    uint8_t ops_and_pars[6][8];
+    MC3_initOpsNPars(ops_and_pars, 6, 8);
+
+    /* Operations */
     readEqu("(2 + 4) * (2 ^ 2 / 8)", tokens, tokensSize);
-    readOpsAndPars(tokens, ops_n_pars);
-    evaluateOps(ops_n_pars, tokens);
-
-    return;
-    __logTokens(tokens, tokensSize);
-    __logOpsAndPars(ops_n_pars);
+    readOpsAndPars(tokens, ops_and_pars);
+    evaluateOps(ops_and_pars, tokens); /* segumentation fault occurs here */
 }
 
 
@@ -550,4 +542,3 @@ void MC3_TESTS(void) {
                                         (ops_n_pars[AT__EXPONENT][0] == 1));
         clearTokens(tokens, tokensLen);
 }
-
