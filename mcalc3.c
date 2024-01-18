@@ -298,7 +298,6 @@ void evaluateOps(uint8_t opsAndPars[6][8], MC3_EquToken tokens[]) {
     (void) opsAndPars;
 
     return;
-    subEvaluateOp(tokens, 0x00);
 }
 
 
@@ -366,10 +365,39 @@ void checkErrors(MC3_ErrorCode code) {
 } 
 
 
+/**
+ * @brief sets all tokens to type 'EMPTY'
+ * 
+ * @param tokens 
+ * @param size 
+ */
+static inline void MC3_initTokens(MC3_EquToken tokens[], const size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        tokens[i].type = EMPTY;
+    }
+}
+
+
+/**
+ * @brief sets all elements of nums to 0
+ * 
+ * @param nums 
+ * @param rows 
+ * @param columns 
+ */
+static inline void MC3_initOpsNPars(uint8_t nums[6][8], const size_t rows, const size_t columns) {
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < columns; ++j) {
+            nums[i][j] = 0;
+        }
+    }
+}
+
+
 double MC3_evaluate(const char *equation) {
     MC3_EquToken tokens[25];
     const size_t tokensSize = sizeof(tokens)/sizeof(tokens[0]);
-    clearTokens(tokens, tokensSize);
+    MC3_initTokens(tokens, tokensSize);
     uint8_t ops_n_pars[6][8] = {
         { 0, 0, 0, 0, 0, 0, 0, 0 },    
         { 0, 0, 0, 0, 0, 0, 0, 0 },    
@@ -387,28 +415,6 @@ double MC3_evaluate(const char *equation) {
  
     return -0.0;
 } 
-
-
-/**
- * @brief sets all tokens to type 'EMPTY'
- * 
- * @param tokens 
- * @param size 
- */
-static inline void MC3_initTokens(MC3_EquToken tokens[], const size_t size) {
-    for (size_t i = 0; i < size; ++i) {
-        tokens[i].type = EMPTY;
-    }
-}
-
-
-static inline void MC3_initOpsNPars(uint8_t nums[6][8], const size_t rows, const size_t columns) {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < columns; ++j) {
-            nums[i][j] = 0;
-        }
-    }
-}
 
 
 void DEBUGGING_printOpsNPars(const uint8_t nums[6][8]) {
@@ -442,10 +448,14 @@ void MC3_RUN(void) {
     uint8_t ops_and_pars[6][8];
     MC3_initOpsNPars(ops_and_pars, 6, 8);
 
+
+    DEBUGGING_printOpsNPars(ops_and_pars);
+
+
     /* Operations */
-    readEqu("(2 + 4) * (2 ^ 2 / 8)", tokens, tokensSize);
-    readOpsAndPars(tokens, ops_and_pars);
-    evaluateOps(ops_and_pars, tokens); /* segumentation fault occurs here */
+    // readEqu("(2 + 4) * (2 ^ 2 / 8)", tokens, tokensSize);
+    // readOpsAndPars(tokens, ops_and_pars);
+    // evaluateOps(ops_and_pars, tokens); /* segumentation fault occurs here */
 }
 
 
@@ -460,7 +470,7 @@ void MC3_TESTS(void) {
         { 0, 0, 0, 0, 0, 0, 0, 0 },
     };
     const size_t tokensLen = sizeof(tokens) / sizeof(tokens[0]);
-    clearTokens(tokens, tokensLen);
+    MC3_initTokens(tokens, tokensLen);
 
     /* readEqu */
     // Single Digits | Single Addition Operator
@@ -470,7 +480,7 @@ void MC3_TESTS(void) {
             && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
             && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
         );
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     // Single Digits | Single Subtraction Operator
         readEqu("2 - 4", tokens, tokensLen);
         MLOG_output_test("2 - 4 properly tokenized", TRUE,
@@ -478,7 +488,7 @@ void MC3_TESTS(void) {
             && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_MINUS)
             && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
         );
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     // Single Digits | Single Multiplication Operator
         readEqu("2 * 4", tokens, tokensLen);
         MLOG_output_test("2 * 4 properly tokenized", TRUE,
@@ -486,7 +496,7 @@ void MC3_TESTS(void) {
             && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_MULTIPLY)
             && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
         );
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     // Single Digits | Single Division Operator
         readEqu("2 + 4", tokens, tokensLen);
         MLOG_output_test("2 + 4 properly tokenized", TRUE,
@@ -494,7 +504,7 @@ void MC3_TESTS(void) {
             && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
             && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
         );
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     // Single Digits | Single Exponent Operator
         readEqu("2 + 4", tokens, tokensLen);
         MLOG_output_test("2 + 4 properly tokenized", TRUE,
@@ -502,9 +512,9 @@ void MC3_TESTS(void) {
             && (tokens[1].type == OPERATOR && tokens[1].subtype == OP_PLUS)
             && (tokens[2].type == INTEGER && tokens[2].ivalue == 4)
         );
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
 
-    clearTokens(tokens, tokensLen);
+    MC3_initTokens(tokens, tokensLen);
 
     /* readOpsAndPars */
     // Single Addition Operator
@@ -512,33 +522,33 @@ void MC3_TESTS(void) {
         readOpsAndPars(tokens, ops_n_pars);
         MLOG_output_test("readsOpsNPars for 2 + 4", TRUE,\
                                         (ops_n_pars[AT__ADD_AND_SUB][0] == 1));
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     
     // Single Subtraction Operator
         readEqu("2 - 4", tokens, tokensLen);
         readOpsAndPars(tokens, ops_n_pars);
         MLOG_output_test("readsOpsNPars for 2 - 4", TRUE,\
                                         (ops_n_pars[AT__ADD_AND_SUB][0] == 1));
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
 
     // Single Multiplication Operator
         readEqu("2 * 4", tokens, tokensLen);
         readOpsAndPars(tokens, ops_n_pars);
         MLOG_output_test("readsOpsNPars for 2 * 4", TRUE,\
                                         (ops_n_pars[AT__MULT_AND_DIV][0] == 1));
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     
     // Single Division Operator
         readEqu("2 * 4", tokens, tokensLen);
         readOpsAndPars(tokens, ops_n_pars);
         MLOG_output_test("readsOpsNPars for 2 * 4", TRUE,\
                                         (ops_n_pars[AT__MULT_AND_DIV][0] == 1));
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
     
     // Single Exponent Operator
         readEqu("2 ^ 4", tokens, tokensLen);
         readOpsAndPars(tokens, ops_n_pars);
         MLOG_output_test("readsOpsNPars for 2 ^ 4", TRUE,\
                                         (ops_n_pars[AT__EXPONENT][0] == 1));
-        clearTokens(tokens, tokensLen);
+        MC3_initTokens(tokens, tokensLen);
 }
