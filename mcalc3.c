@@ -39,7 +39,15 @@ typedef struct MC3_EquToken {
 } MC3_EquToken;
 
 
-static MC3_ErrorCode tokenizeEqu(const char* equ) {
+/**
+ * @brief tokenizes string `equ` into MC3_EquToken `tokens` 
+ * 
+ * @param equ 
+ * @return MC3_ErrorCode 
+ */
+static MC3_ErrorCode tokenizeEqu(const char* equ, MC3_EquToken tokens[], const size_t len) {
+    uint8_t tokensIndex = 0;
+
     for (size_t i = 0; equ[i] != '\0'; ++i) {
         switch (equ[i]) {
             case '+': break;
@@ -87,12 +95,21 @@ void printTokens(const MC3_EquToken tokens[], const size_t size) {
     }
 }
 
+
+/**
+ * @brief evaluates expression within `equ`, returns result
+ * 
+ * @param equ 
+ * @return double 
+ */
 extern double MC3_evaluateEqu(const char* equ) {
     /* Initialization */
     MC3_EquToken tokens[MAX_TOKENS];
+    
+    initTokens(tokens, MAX_TOKENS);
 
     /* Tokenization */
-    tokenizeEqu(equ);
+    tokenizeEqu(equ, tokens, MAX_TOKENS);
 
     /* Parsing */
 
