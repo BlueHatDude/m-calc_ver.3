@@ -5,5 +5,4 @@
 int main(const int argc, const char* argv[]) {
     (void) argc;
     (void) argv;
-    MC3_RUN();
 }
