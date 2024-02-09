@@ -82,6 +82,7 @@ void printTokens(const MC3_EquToken tokens[], const size_t size) {
             case INTEGER: break;
             case DECIMAL: break;
             case VARIABLE: break;
+            case EMPTY: break;
         }
     }
 }
