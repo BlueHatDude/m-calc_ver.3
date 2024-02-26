@@ -39,6 +39,12 @@ typedef struct MC3_EquToken {
 } MC3_EquToken;
 
 
+typedef struct MC3_Solution {
+    char identifier;
+    double value;
+} MC3_Solution;
+
+
 /**
  * @brief tokenizes string `equ` into MC3_EquToken `tokens` 
  * 
@@ -46,7 +52,9 @@ typedef struct MC3_EquToken {
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode tokenizeEqu(const char* equ, MC3_EquToken tokens[], const size_t len) {
-    uint8_t tokensIndex = 0;
+    // uint8_t tokensIndex = 0; 
+    (void) tokens;
+    (void) len;
 
     for (size_t i = 0; equ[i] != '\0'; ++i) {
         switch (equ[i]) {
@@ -66,7 +74,7 @@ static MC3_ErrorCode tokenizeEqu(const char* equ, MC3_EquToken tokens[], const s
         }
     }
 
-    return MC3_NO_ERROR;
+    return MC3_Error_NO_ERROR;
 }
 
 
@@ -77,23 +85,8 @@ static void initTokens(MC3_EquToken tokens[], const size_t size) {
 }
 
 
-void printTokens(const MC3_EquToken tokens[], const size_t size) {
-    for (size_t i = 0; i < size; ++i) {
-        switch (tokens[i].type) {
-            case OP_ADD: break;
-            case OP_SUB: break;
-            case OP_MULT: break;
-            case OP_DIV: break;
-            case OP_EXP: break;
-            case L_PAR: break;
-            case R_PAR: break;
-            case INTEGER: break;
-            case DECIMAL: break;
-            case VARIABLE: break;
-            case EMPTY: break;
-        }
-    }
-}
+/** Debugging Functions */
+void printTokens(const MC3_EquToken[], const size_t);
 
 
 /**
@@ -115,5 +108,26 @@ extern double MC3_evaluateEqu(const char* equ) {
 
     /* Clean-Up */
 
+    /* Debugging */
+
     return -0.0;
 } 
+
+
+void printTokens(const MC3_EquToken tokens[], const size_t size) {
+    for (size_t i = 0; i < size; ++i) {
+        switch (tokens[i].type) {
+            case OP_ADD: break;
+            case OP_SUB: break;
+            case OP_MULT: break;
+            case OP_DIV: break;
+            case OP_EXP: break;
+            case L_PAR: break;
+            case R_PAR: break;
+            case INTEGER: break;
+            case DECIMAL: break;
+            case VARIABLE: break;
+            case EMPTY: break;
+        }
+    }
+}

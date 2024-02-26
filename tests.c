@@ -2,6 +2,6 @@
 
 
 int main(void) {
-  MC3_TESTS();
+    double result = MC3_evaluateEqu("2 + 4");
+    (void) result;
 }
-
