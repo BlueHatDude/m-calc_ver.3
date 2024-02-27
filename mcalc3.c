@@ -14,24 +14,31 @@ typedef uint8_t OrderOfOpsTracker[ORDER_OF_OP_ROWS][ORDER_OF_OP_COLUMNS];
 
 
 typedef enum TokenType {
-    EMPTY,
-    OP_ADD,
-    OP_SUB,
-    OP_MULT,
-    OP_DIV,
-    OP_EXP,
+    EMPTY = 0,
     L_PAR,
     R_PAR,
+    OPERATOR,
     INTEGER,
     DECIMAL,
     VARIABLE,
 } TokenType;
 
 
+/* enum starts at 10 to avoid collisions */
+typedef enum OperatorType {
+    OP_ADD = 10,
+    OP_SUB,
+    OP_MULT,
+    OP_DIV,
+    OP_EXP,
+} OperatorType;
+
+
 typedef struct MC3_EquToken {
     TokenType type;
 
     union {
+        OperatorType optype;
         int64_t ivalue;
         float64_t fvalue;
         char identifier;
@@ -45,6 +52,20 @@ typedef struct MC3_Solution {
 } MC3_Solution;
 
 
+int checkTokensOverflow(int* index, const int capacity) {
+    if ( (*index) >= capacity ) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
+
+static inline void tokensAdd(MC3_EquToken* reference, MC3_EquToken tokens[], const int index) {
+    tokens[index] = *reference;
+}
+
+
 /**
  * @brief tokenizes string `equ` into MC3_EquToken `tokens` 
  * 
@@ -52,19 +73,26 @@ typedef struct MC3_Solution {
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode tokenizeEqu(const char* equ, MC3_EquToken tokens[], const size_t len) {
-    // uint8_t tokensIndex = 0; 
-    (void) tokens;
-    (void) len;
+    uint8_t tokensIndex = 0; 
+    MC3_EquToken tempToken;
 
     for (size_t i = 0; equ[i] != '\0'; ++i) {
         switch (equ[i]) {
-            case '+': break;
-            case '-': break;
-            case '*': break;
-            case '/': break;
-            case '^': break;
-            case '(': break;
-            case ')': break;
+            case '+':
+                ; 
+                break;
+            case '-': ; 
+                break;
+            case '*': ; 
+                break;
+            case '/': ; 
+                break;
+            case '^': ; 
+                break;
+            case '(': ; 
+                break;
+            case ')': ; 
+                break;
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9':
                 break;
