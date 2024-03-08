@@ -22,6 +22,4 @@ sqrt(25) = 5
 >> mcalc3 "cos(PI/3)" "sin(PI/3)"
 cos(PI/3) = 0.5
 sin(PI/3) = 0.8660
->> mcalc3 "2x + 5 = 10"
-2x + 5 = 10 | x = 2.500
 ```
