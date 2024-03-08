@@ -19,7 +19,7 @@ Type an expression in the form `mcalc3 "{expression}"`. The quotation marks are 
 2 ^ 5 = 32
 >> mcalc3 "sqrt(25)"
 sqrt(25) = 5
->> mcalc3 --use-radians "cos(PI/3)" "sin(PI/3)"
+>> mcalc3 "cos(PI/3)" "sin(PI/3)"
 cos(PI/3) = 0.5
 sin(PI/3) = 0.8660
 >> mcalc3 "2x + 5 = 10"
