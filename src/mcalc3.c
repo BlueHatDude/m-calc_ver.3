@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include <stdint.h>
 typedef float float32_t;
 typedef double float64_t;
@@ -50,6 +51,19 @@ typedef struct MC3_Solution {
 
 static inline void clearBuffer(char* s) {
     s[0] = '\0';
+}
+
+
+/**
+ * @brief tests to see if next characters in str == test
+ * 
+ * @param test the substring
+ * @param str the string that is being tested for substring
+ * @return true 
+ * @return false 
+ */
+bool strNext(const char* test, const char* str) {
+    
 }
 
 
@@ -152,7 +166,7 @@ static MC3_ErrorCode tokenizeEqu(const char* equ, MC3_EquToken tokens[], const s
             }
             case ' ': break;
             default: /* sqrt, sin, cos, tan, sqrt */
-                
+
                 break;
         }
         tokensIndex++;
