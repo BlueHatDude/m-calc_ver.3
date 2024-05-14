@@ -2,4 +2,10 @@
 #define MCALCULATOR_VER3_H_
 
 
+    typedef enum {
+        NO_ERROR
+    } MC3_ErrorCode;
+
+    extern double MC3_evaluate(const char* equ);
+
 #endif /* MCALCULATOR_VER3_H_ */
