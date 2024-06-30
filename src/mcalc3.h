@@ -3,7 +3,8 @@
 
 
     typedef enum {
-        NO_ERROR
+        NO_ERROR,
+        TOKENS_LIMIT_REACHED
     } MC3_ErrorCode;
 
     extern double MC3_evaluate(const char* equ);
