@@ -40,6 +40,10 @@ typedef enum TokenType {
     FN_LOG_10,
     FN_LOG_E,
 
+    /* constants */
+    CONSTANT_PI,
+    CONSTANT_E
+
 } TokenType;
 
 
@@ -59,6 +63,17 @@ typedef struct EquToken {
 
 static inline void clearString(char* str, const size_t len) {
     memset(str, '\0', len);
+}
+
+
+/**
+ * @brief checks to see if substring is in string at str_start 
+ * 
+ * @return true 
+ * @return false 
+ */
+static inline bool stringAt(const char sub_str[], const char* str_start) {
+    return (strstr(str_start, sub_str) == str_start);
 }
 
 
@@ -82,9 +97,7 @@ static inline void setToken(EquToken* tkn, TokenType type, double value) {
 }
 
 
-static MC3_ErrorCode addToken(const EquToken* ref, EquToken tkns[], size_t* pos,
-                                const size_t max)
-{
+static MC3_ErrorCode addToken(const EquToken* ref, EquToken tkns[], size_t* pos, const size_t max) {
     if ((*pos) >= max) {
         return TOKENS_LIMIT_REACHED;
     }
@@ -109,12 +122,10 @@ static MC3_ErrorCode tokenize(const char* equ, EquToken tkns[], const size_t max
     EquToken ref_token;
     size_t pos = 0;
     const size_t EQU_LENGTH = strlen(equ);
-    const unsigned short STR_NUM_SIZE = 15;
-    char str_num[STR_NUM_SIZE];
-    (void) str_num;
 
     for (size_t i = 0; i < EQU_LENGTH; i++) {
         switch (equ[i]) {
+            /* operators */
             case '+':
                 setToken(&ref_token, OP_ADD, 0);
                 break;
@@ -130,6 +141,14 @@ static MC3_ErrorCode tokenize(const char* equ, EquToken tkns[], const size_t max
             case '^':
                 setToken(&ref_token, OP_EXP, 0);
                 break;
+            /* parenthesis */
+            case '(':
+                setToken(&ref_token, PAR_LEFT, 0);
+                break;
+            case ')':
+                setToken(&ref_token, PAR_RIGHT, 0);
+                break;
+            /* checking for numbers */
             case '0': case '1': case '2': case '3': case '4':
             case '5': case '6': case '7': case '8': case '9': {
                 const int j = (int) i;
@@ -148,13 +167,44 @@ static MC3_ErrorCode tokenize(const char* equ, EquToken tkns[], const size_t max
                     setToken(&ref_token, TYPE_INTEGER, strtol(&equ[j], NULL, 10));
                 }
 
+                /* prevents position pointer from skipping over character after number */
+                i--;
                 break; 
             }
-            default: 
-                ref_token.type = TYPE_EMPTY;
+            default: {
+                /* checking for functions */
+                // TODO: remove unecessary iterations through words
+                if (stringAt("sin", &equ[i])) {
+                    setToken(&ref_token, FN_SIN, 0);
+                }
+                else if (stringAt("cos", &equ[i])) {
+                    setToken(&ref_token, FN_COS, 0);
+                } 
+                else if (stringAt("tan", &equ[i])) {
+                    setToken(&ref_token, FN_TAN, 0);
+                } 
+                else if (stringAt("log", &equ[i])) {
+                    setToken(&ref_token, FN_LOG_10, 0);
+                } 
+                else if (stringAt("ln", &equ[i])) {
+                    setToken(&ref_token, FN_LOG_E, 0);
+                }
+                /* checking for constants */
+                else if (stringAt("pi", &equ[i])) {
+                    setToken(&ref_token, CONSTANT_PI, 0);
+                }
+                else if (stringAt("e", &equ[i])) {
+                    setToken(&ref_token, CONSTANT_E, 0);
+                }
+                else {
+                    ref_token.type = TYPE_EMPTY;
+                }
+
                 break;
+            }
         }
 
+        /* adding token to tokens array */
         if (ref_token.type != TYPE_EMPTY) {
             addToken(&ref_token, tkns, &pos, max);
         }
@@ -166,6 +216,7 @@ static MC3_ErrorCode tokenize(const char* equ, EquToken tkns[], const size_t max
 
 void DEBUGGING_printToken(const EquToken tkn);
 void DEBUGGING_printTokens(const EquToken tkns[], const size_t size);
+void DEBUGGING_printCompactTokens(const EquToken tkns[]);
 
 
 double MC3_evaluate(const char *equ) {
@@ -179,7 +230,7 @@ double MC3_evaluate(const char *equ) {
     errorCode = tokenize(equ, tokens, MAX_TOKENS);
 
     /* debugging */
-    DEBUGGING_printTokens(tokens, MAX_TOKENS);
+    DEBUGGING_printCompactTokens(tokens);
 
     return 0.0;
 }
@@ -188,49 +239,55 @@ double MC3_evaluate(const char *equ) {
 void DEBUGGING_printToken(const EquToken tkn) {
     switch (tkn.type) {
     case OP_ADD:
-        puts("OP_ADD");
+        printf("OP_ADD");
         break;
     case OP_SUB:
-        puts("OP_SUB");
+        printf("OP_SUB");
         break;
     case OP_MULT:
-        puts("OP_MULT");
+        printf("OP_MULT");
         break;
     case OP_DIV:
-        puts("OP_DIV");
+        printf("OP_DIV");
         break;
     case OP_EXP:
-        puts("OP_EXP");
+        printf("OP_EXP");
         break;
     case PAR_LEFT:
-        puts("PAR_LEFT");
+        printf("PAR_LEFT");
         break;
     case PAR_RIGHT:
-        puts("PAR_RIGHT");
+        printf("PAR_RIGHT");
         break;
     case TYPE_INTEGER:
-        printf("TYPE_INTEGER: %ld\n", tkn.ivalue);
+        printf("TYPE_INTEGER: %ld", tkn.ivalue);
         break;
     case TYPE_DECIMAL:
-        printf("TYPE_DECIMAL: %lf\n", tkn.fvalue);
+        printf("TYPE_DECIMAL: %lf", tkn.fvalue);
         break;
     case TYPE_EMPTY:
-        puts("TYPE_EMPTY");
+        printf("TYPE_EMPTY");
         break;
     case FN_SIN:
-        puts("FN_SIN");
+        printf("FN_SIN");
         break;
     case FN_COS:
-        puts("FN_COS");
+        printf("FN_COS");
         break;
     case FN_TAN:
-        puts("FN_TAN");
+        printf("FN_TAN");
         break;
     case FN_LOG_10:
-        puts("FN_LOG_10");
+        printf("FN_LOG_10");
         break;
     case FN_LOG_E:
-        puts("FN_LOG_E");
+        printf("FN_LOG_E");
+        break;
+    case CONSTANT_PI:
+        printf("CONSTANT_PI");
+        break;
+    case CONSTANT_E:
+        printf("CONSTANT_E");
         break;
     }
 }
@@ -240,5 +297,16 @@ void DEBUGGING_printTokens(const EquToken tkns[], const size_t size) {
     for (size_t i = 0; i < size; i++) {
         printf("%-2zu: ", i);
         DEBUGGING_printToken(tkns[i]);
+        puts("");
     }
+}
+
+
+void DEBUGGING_printCompactTokens(const EquToken tkns[]) {
+    printf("[ ");
+    for (int i = 0; tkns[i].type != TYPE_EMPTY; i++) {
+        DEBUGGING_printToken(tkns[i]);
+        printf(", ");
+    }
+    puts("]");
 }

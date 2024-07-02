@@ -10,5 +10,5 @@ void testTokenization(void) {
 
 
 int main(void) {
-    MC3_evaluate("2 * (48 + 3.14)");
+
 }
