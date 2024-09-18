@@ -128,7 +128,7 @@ static inline void set_token(struct EquToken* dest, enum TokenType type, double 
  */
 static MC3_ErrorCode add_token(const struct EquToken* ref, struct TokensList* list) {
     if (list->tkns_pos >= list->capacity) {
-        return TOKENS_LIMIT_REACHED;
+        return MC3_TOKENS_LIMIT_REACHED;
     }
 
     double value;
@@ -141,11 +141,10 @@ static MC3_ErrorCode add_token(const struct EquToken* ref, struct TokensList* li
     set_token(&list->tokens[list->tkns_pos], ref->type, value);
     list->tkns_pos++;
 
-    return NO_ERROR;
+    return MC3_NO_ERROR;
 }
 
 
-// TODO: updated to use TokensList
 static MC3_ErrorCode read_number(const char* equ, struct EquToken* tkn, size_t* index) {
     const size_t j = (*index);
     bool is_decimal = false;
@@ -166,7 +165,7 @@ static MC3_ErrorCode read_number(const char* equ, struct EquToken* tkn, size_t* 
     /* prevents position pointer from skipping over character after number */
     (*index)--;
 
-    return NO_ERROR;
+    return MC3_NO_ERROR;
 }
 
 static bool is_operator(char c) {
@@ -260,7 +259,17 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
         }
     }
 
-    return NO_ERROR;
+    return MC3_NO_ERROR;
+}
+
+
+/**
+ * @brief helper function for parse_tokens
+ * 
+ * @return MC3_ErrorCode 
+ */
+static MC3_ErrorCode sub_parse_tokens(void) {
+
 }
 
 
@@ -274,7 +283,23 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
 static MC3_ErrorCode parse_tokens(struct TokensList* list) {
     /* [INT, ADD, INT, SUB, INT, MULT, INT, DIV, INT, EXP, INT] */
     (void) list;
-    return NO_ERROR;
+    return MC3_NO_ERROR;
+}
+
+
+/* ===== Error Handling Functions =====*/
+
+const char* getErrorString(const MC3_ErrorCode err) {
+    switch (err) {
+    case MC3_NO_ERROR:
+        return "No error";
+    case MC3_TOKENS_LIMIT_REACHED:
+        return "Tokens limit Reached. Expression too long.";
+    case MC3_INVALID_CHARACTER_FOUND:
+        return "Invalid character was found.";
+    default:
+        return "Invalid Error Code";
+    }
 }
 
 
@@ -359,6 +384,30 @@ void print_compact_tokens(const struct TokensList* list) {
 }
 
 
+/* DEBUGGING */
+void print_tokens_full(const struct TokensList* list) {
+    for (unsigned int i = 0; i < list->tkns_pos; i++) {
+        printf("%02u: ", i);
+        print_token(list->tokens[i]);
+        printf(" | left: ");
+        if (list->tokens[i].left_operand == NULL) {
+            printf(" | left: NULL");
+        } else {
+            printf(" | left: ");
+            print_token(*(list->tokens[i].left_operand));
+        }
+        printf(" | right: ");
+        if (list->tokens[i].right_operand == NULL) {
+            printf(" | right: NULL");
+        } else {
+            printf(" | right: ");
+            print_token(*(list->tokens[i].left_operand));
+        }
+        puts("");
+    }
+}
+
+
 /**
  * @brief evaluates a mathematical expression from a string, returning the result as a double.
  * Calculator supports all basic arithmetic operators: +, -, *, /, and ^. Also supports basic  
@@ -374,10 +423,10 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     (void) equ;
     
     struct TokensList tokens_list = init_list();
-    MC3_ErrorCode error_code = NO_ERROR;
+    MC3_ErrorCode error_code = MC3_NO_ERROR;
 
-    tokenize(equ, &tokens_list);
-    parse_tokens(&tokens_list);
+    error_code = tokenize(equ, &tokens_list);
+    error_code = parse_tokens(&tokens_list);
 
     print_compact_tokens(&tokens_list);
 
