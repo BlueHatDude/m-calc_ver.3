@@ -130,8 +130,8 @@ static MC3_ErrorCode add_token(const struct EquToken* ref, struct TokensList* li
     if (list->tkns_pos >= list->capacity) {
         return MC3_TOKENS_LIMIT_REACHED;
     }
-
-    double value;
+    
+    double value = 0.0;
     if (ref->type == TYPE_INTEGER) {
         value = ref->ivalue;
     } else if (ref->type == TYPE_DECIMAL) {
@@ -330,7 +330,7 @@ void print_token(const struct EquToken tkn) {
         printf("PAR_RIGHT");
         break;
     case TYPE_INTEGER:
-        printf("TYPE_INTEGER: %ld", tkn.ivalue);
+        printf("TYPE_INTEGER: %lld",  tkn.ivalue);
         break;
     case TYPE_DECIMAL:
         printf("TYPE_DECIMAL: %lf", tkn.fvalue);
