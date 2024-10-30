@@ -1,5 +1,5 @@
 CC=gcc
-WARNINGS=-Wall -Werror -Wextra -pedantic -fsanitize=address
+WARNINGS=-Wall -Werror -Wextra -pedantic -fsanitize=address -Wno-unused-function
 STANDARD=-std=c18
 
 
@@ -14,7 +14,7 @@ mcalc3.o: src/mcalc3.c
 	$(CC) -c src/mcalc3.c $(WARNINGS) $(STANDARD)
 
 tests: src/tests.c mcalc3.o
-	$(CC) -o mcalc3_tests src/tests.c mcalc3.o $(STANDARD)
+	$(CC) -o mcalc3_tests src/tests.c mcalc3.o $(WARNINGS) $(STANDARD)
 
 clean:
 	rm mcalc3.o mcalc3 mcalc3_tests
