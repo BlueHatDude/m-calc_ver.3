@@ -60,7 +60,7 @@
 
     static void mlog_array_int(int arr[], size_t size) {
         printf("[LOG]: [");
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             printf("%d%s", arr[i], (i == (size - 1) ? "" : ", "));
         }
         puts("]");
@@ -68,7 +68,7 @@
 
     static void mlog_array_char(char arr[], size_t size) {
         printf("[LOG]: [");
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             printf("%c%s", arr[i], (i == (size - 1) ? "" : ", "));
         }
         puts("]");
@@ -77,7 +77,7 @@
 
     static void mlog_array_double(double arr[], size_t size) {
         printf("[LOG]: [");
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             printf("%lf%s", arr[i], (i == (size - 1) ? "" : ", "));
         }
         puts("]");
@@ -85,7 +85,7 @@
 
     static void mlog_array_str(char* arr[], size_t size) {
         printf("[LOG]: [");
-        for (int i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i++) {
             printf("%s%s", arr[i], (i == (size - 1) ? "" : ", "));
         }
         puts("]");
