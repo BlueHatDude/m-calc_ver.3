@@ -308,57 +308,57 @@ const char* getErrorString(const MC3_ErrorCode err) {
 /* DEBUGGING */
 void print_token(const struct EquToken tkn) {
     switch (tkn.type) {
-    case OP_ADD:
-        printf("OP_ADD");
-        break;
-    case OP_SUB:
-        printf("OP_SUB");
-        break;
-    case OP_MULT:
-        printf("OP_MULT");
-        break;
-    case OP_DIV:
-        printf("OP_DIV");
-        break;
-    case OP_EXP:
-        printf("OP_EXP");
-        break;
-    case PAR_LEFT:
-        printf("PAR_LEFT");
-        break;
-    case PAR_RIGHT:
-        printf("PAR_RIGHT");
-        break;
-    case TYPE_INTEGER:
-        printf("TYPE_INTEGER: %lld",  tkn.ivalue);
-        break;
-    case TYPE_DECIMAL:
-        printf("TYPE_DECIMAL: %lf", tkn.fvalue);
-        break;
-    case TYPE_EMPTY:
-        printf("TYPE_EMPTY");
-        break;
-    case FN_SIN:
-        printf("FN_SIN");
-        break;
-    case FN_COS:
-        printf("FN_COS");
-        break;
-    case FN_TAN:
-        printf("FN_TAN");
-        break;
-    case FN_LOG_10:
-        printf("FN_LOG_10");
-        break;
-    case FN_LOG_E:
-        printf("FN_LOG_E");
-        break;
-    case CONSTANT_PI:
-        printf("CONSTANT_PI");
-        break;
-    case CONSTANT_E:
-        printf("CONSTANT_E");
-        break;
+        case OP_ADD:
+            printf("OP_ADD");
+            break;
+        case OP_SUB:
+            printf("OP_SUB");
+            break;
+        case OP_MULT:
+            printf("OP_MULT");
+            break;
+        case OP_DIV:
+            printf("OP_DIV");
+            break;
+        case OP_EXP:
+            printf("OP_EXP");
+            break;
+        case PAR_LEFT:
+            printf("PAR_LEFT");
+            break;
+        case PAR_RIGHT:
+            printf("PAR_RIGHT");
+            break;
+        case TYPE_INTEGER:
+            printf("TYPE_INTEGER: %lld",  tkn.ivalue);
+            break;
+        case TYPE_DECIMAL:
+            printf("TYPE_DECIMAL: %lf", tkn.fvalue);
+            break;
+        case TYPE_EMPTY:
+            printf("TYPE_EMPTY");
+            break;
+        case FN_SIN:
+            printf("FN_SIN");
+            break;
+        case FN_COS:
+            printf("FN_COS");
+            break;
+        case FN_TAN:
+            printf("FN_TAN");
+            break;
+        case FN_LOG_10:
+            printf("FN_LOG_10");
+            break;
+        case FN_LOG_E:
+            printf("FN_LOG_E");
+            break;
+        case CONSTANT_PI:
+            printf("CONSTANT_PI");
+            break;
+        case CONSTANT_E:
+            printf("CONSTANT_E");
+            break;
     }
 }
 
