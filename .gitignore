@@ -36,7 +36,7 @@
 *.x86_64
 *.hex
 mcalc3
-mcalc3_tests
+tests
 
 # Debug files
 *.dSYM/
@@ -54,5 +54,8 @@ Mkfile.old
 dkms.conf
 
 # Visual Studio Code
-/.vscode
+.vscode/
 output
+
+# Other
+temp.txt
