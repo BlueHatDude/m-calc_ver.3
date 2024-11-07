@@ -1,5 +1,5 @@
-#include "mcalc3.h"
 #include <stdint.h>
+#include "mcalc3.h"
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
@@ -8,12 +8,27 @@
 #include <stdio.h> /* only for debugging purposes */
 
 
-typedef float float32_t;
-typedef double float64_t;
-
-
 #define MAX_TOKENS 100
 
+
+/* ===== String Functions =====*/
+
+static inline void clear_string(char* str, const size_t len) {
+    memset(str, '\0', len);
+}
+
+
+/**
+ * @brief checks to see if substring is in string at str_start 
+ * 
+ * @return true 
+ * @return false 
+ */
+static inline bool string_at(const char sub_str[], const char* str_start) {
+    return (strstr(str_start, sub_str) == str_start);
+}
+
+/* ===== Data Types  =====*/
 
 enum TokenType {
 
@@ -53,12 +68,11 @@ struct EquToken {
     
     union {
         int64_t ivalue;
-        float64_t fvalue;
+        double fvalue;
     }; 
 
     struct EquToken* left_operand;
     struct EquToken* right_operand;
-
 };
 
 
@@ -70,30 +84,101 @@ struct TokensList {
     /* current index of tokens */
     unsigned int tkns_pos;
     /* positions of operators in tokens */
-    unsigned int operators[MAX_TOKENS / 2];
+    unsigned int operators[MAX_TOKENS];
     unsigned int op_pos;
 };
 
+/* ===== Token Functions =====*/
 
-/* ===== Utility Functions =====*/
-
-static inline void clear_string(char* str, const size_t len) {
-    memset(str, '\0', len);
+static enum TokenType char_to_type(char ch) {
+    switch (ch) {
+        case '+': return OP_ADD;
+        case '-': return OP_SUB;
+        case '*': return OP_MULT;
+        case '/': return OP_DIV;
+        case '^': return OP_EXP;
+        case '(': return PAR_LEFT;
+        case ')': return PAR_RIGHT;
+        default:  return TYPE_EMPTY;
+    }
 }
 
-
-/**
- * @brief checks to see if substring is in string at str_start 
- * 
- * @return true 
- * @return false 
- */
-static inline bool string_at(const char sub_str[], const char* str_start) {
-    return (strstr(str_start, sub_str) == str_start);
+static enum TokenType str_to_fn(const char* str) {
+    if (strncmp(str, "sin", 3) == 0) {
+        return FN_SIN;
+    } else if (strncmp(str, "cos", 3) == 0) {
+        return FN_COS;
+    } else if (strncmp(str, "tan", 3) == 0) {
+        return FN_TAN;
+    } else if (strncmp(str, "log", 3) == 0) {
+        return FN_LOG_10;
+    } else if (strncmp(str, "ln", 2) == 0) {
+        return FN_LOG_E;
+    } else {
+        return TYPE_EMPTY;
+    }
 }
 
+static const char* fn_type_to_str(enum TokenType type) {
+    switch (type) {
+        case FN_SIN: return "sin";
+        case FN_COS: return "cos";
+        case FN_TAN: return "tan";
+        case FN_LOG_10: return "log";
+        case FN_LOG_E: return "ln";
+        default: return NULL;
+    }
+}
 
-/* ===== Calculator Functions =====*/
+static bool is_operator(char ch) {
+    switch (ch) {
+        case '+': case '-': case '*': case '/': case '^':
+            return true;
+        default:
+            return false;
+    }
+}
+
+static bool is_grouping(char ch) {
+    return (ch == '(') || (ch == ')');
+}
+
+static bool is_constant(const char* str, const int index) {
+    char* funcs[] = {"pi", "e"};
+    int len = sizeof(funcs)/sizeof(char*);
+
+    for (int i = 0; i < len; i++) {
+        if (string_at(funcs[i], &str[index]))
+            return true;
+    }
+
+    return false;
+}
+
+static bool is_func(const char* str, const int index) {
+    char* funcs[] = {"sin", "cos", "tan", "log", "ln"};
+    int len = sizeof(funcs)/sizeof(char*);
+
+    for (int i = 0; i < len; i++) {
+        if (string_at(funcs[i], &str[index]))
+            return true;
+    }
+
+    return false;
+}
+
+static inline void set_token(struct EquToken* dest, enum TokenType type,
+                             double value) {
+    dest->type = type;
+
+    if (type == TYPE_INTEGER) {
+        dest->ivalue = (int64_t) value;
+    } else if (type == TYPE_DECIMAL) {
+        dest->fvalue = value;
+    }
+}
+
+/* ===== Tokens List Functions =====*/
 
 struct TokensList init_list(void) {
     struct TokensList list;
@@ -105,95 +190,67 @@ struct TokensList init_list(void) {
     return list;
 }
 
-
-static inline void set_token(struct EquToken* dest, enum TokenType type, double value) {
-    dest->type = type;
-
-    if (type == TYPE_INTEGER) {
-        dest->ivalue = (int64_t) value;
-    } else if (type == TYPE_DECIMAL) {
-        dest->fvalue = value;
+static void add_operator(struct TokensList* list, const char ch) {
+    if (list->op_pos < (list->capacity - 1)) {
+        struct EquToken token;
+        enum TokenType type = char_to_type(ch);
+        set_token(&token, type, 0.0);
     }
 }
 
-
-/**
- * @brief 
- * 
- * @param ref 
- * @param tkns 
- * @param pos 
- * @param max 
- * @return MC3_ErrorCode 
- */
-static MC3_ErrorCode add_token(const struct EquToken* ref, struct TokensList* list) {
-    if (list->tkns_pos >= list->capacity) {
-        return MC3_TOKENS_LIMIT_REACHED;
-    }
-    
-    double value = 0.0;
-    if (ref->type == TYPE_INTEGER) {
-        value = ref->ivalue;
-    } else if (ref->type == TYPE_DECIMAL) {
-        value = ref->fvalue;
-    }
-
-    set_token(&list->tokens[list->tkns_pos], ref->type, value);
-    list->tkns_pos++;
-
-    return MC3_NO_ERROR;
-}
-
-
-static MC3_ErrorCode read_number(const char* equ, struct EquToken* tkn, size_t* index) {
-    const size_t j = (*index);
+static void add_number(struct TokensList* list, const char* equ,
+                       int* iterator) {
     bool is_decimal = false;
-    while (isdigit(equ[*index]) || equ[*index] == '.') {
-        if (equ[*index] == '.')
+    const int START_INDEX = *iterator;
+
+    while (isdigit(equ[*iterator]) || equ[*iterator] == '.') {
+        if (equ[*iterator] == '.')
             is_decimal = true;
-        
-        (*index)++;
+        (*iterator)++;
     }
 
     if (is_decimal) {
-        set_token(tkn, TYPE_DECIMAL, strtod(&equ[j], NULL));
-    } 
-    else {
-        set_token(tkn, TYPE_INTEGER, strtol(&equ[j], NULL, 10));
-    }
-
-    /* prevents position pointer from skipping over character after number */
-    (*index)--;
-
-    return MC3_NO_ERROR;
-}
-
-static bool is_operator(char c) {
-    switch (c) {
-        case '+': case '-': case '*': case '/': case '^':
-            return true;
-        default:
-            return false;
+        double value = strtod(&equ[START_INDEX], NULL);
+        set_token(&list->tokens[list->tkns_pos], TYPE_DECIMAL, value);
+        list->tkns_pos++;
+    } else {
+        int value = strtoll(&equ[START_INDEX], NULL, 10);
+        set_token(&list->tokens[list->tkns_pos], TYPE_INTEGER, value);
+        list->tkns_pos++;
     }
 }
 
+static void add_function(struct TokensList* list, const char* equ,
+                         int* iterator) {
 
-static enum TokenType char_to_type(char c) {
-    switch (c) {
-        case '+': return OP_ADD;
-        case '-': return OP_SUB;
-        case '*': return OP_MULT;
-        case '/': return OP_DIV;
-        case '^': return OP_EXP;
-        default:  return TYPE_EMPTY;
+    enum TokenType type = str_to_fn(&equ[*iterator]);
+    int len = strlen(fn_type_to_str(type));
+
+    if (type == TYPE_EMPTY) {
+        /* string was not a function */
+        ;;;
+    } else {
+        set_token(&list->tokens[list->tkns_pos], type, 0);
+        list->tkns_pos++;
+        *iterator += len;
+    }
+}
+
+static void add_constant(struct TokensList* list, const char* equ,
+                         int* iterator) {
+    if (string_at("pi", &equ[*iterator])) {
+        set_token(&list->tokens[list->tkns_pos], CONSTANT_PI, 0);   
+        list->tkns_pos++;
+        *iterator += 2; 
+    } else if (string_at("e", &equ[*iterator])) {
+        set_token(&list->tokens[list->tkns_pos], CONSTANT_E, 0);
+        list->tkns_pos++;
+        *iterator += 1;
     }
 }
 
 
-static bool is_grouping(char c) {
-    return (c == '(') || (c == ')');
-}
-
+/* ===== Calculator Functions =====*/
 
 /**
  * @brief tokenizes string `equ` and reads into `tkns`
@@ -204,64 +261,26 @@ static bool is_grouping(char c) {
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
-    struct EquToken ref_token;
-    const size_t EQU_LENGTH = strlen(equ);
+    const int EQU_LENGTH = strlen(equ);
 
-    for (size_t i = 0; i < EQU_LENGTH; i++) {
-        /* checking for numbers, operators, and grouping */
-        if (is_operator(equ[i])) {
-            list->operators[list->op_pos] = i;
-            list->op_pos++;
-            enum TokenType type = char_to_type(equ[i]);
-            set_token(&ref_token, type, 0);
-            
-        } else if (is_grouping(equ[i])) {
-            if (equ[i] == '(')
-                set_token(&ref_token, PAR_LEFT, 0);
-            else
-                set_token(&ref_token, PAR_RIGHT, 0);
-
+    for (int i = 0; i < EQU_LENGTH; i++) {
+        if (is_operator(equ[i]) || is_grouping(equ[i])) {
+            add_operator(list, equ[i]);
         } else if (isdigit(equ[i])) {
-            read_number(equ, &ref_token, &i);
-        }
-
-        /* checking for functions */
-        else if (string_at("sin", &equ[i])) {
-            set_token(&ref_token, FN_SIN, 0);
-        }
-        else if (string_at("cos", &equ[i])) {
-            set_token(&ref_token, FN_COS, 0);
-        } 
-        else if (string_at("tan", &equ[i])) {
-            set_token(&ref_token, FN_TAN, 0);
-        } 
-        else if (string_at("log", &equ[i])) {
-            set_token(&ref_token, FN_LOG_10, 0);
-        } 
-        else if (string_at("ln", &equ[i])) {
-            set_token(&ref_token, FN_LOG_E, 0);
-        }
-        
-        /* checking for constants */
-        else if (string_at("pi", &equ[i])) {
-            set_token(&ref_token, CONSTANT_PI, 0);
-        }
-        else if (string_at("e", &equ[i])) {
-            set_token(&ref_token, CONSTANT_E, 0);
-        }
-        else {
-            ref_token.type = TYPE_EMPTY;
-        }
-
-        /* adding token to tokens array */
-        if (ref_token.type != TYPE_EMPTY) {
-            add_token(&ref_token, list);
+            add_number(list, equ, &i);
+        } else if (is_func(equ, i)) {
+            add_function(list, equ, &i);
+        } else if (is_constant(equ, i)) {
+            add_constant(list, equ, &i);
+        } else if (equ[i] == ' ') {
+            continue;
+        } else {
+            return MC3_INVALID_CHARACTER_FOUND;
         }
     }
 
     return MC3_NO_ERROR;
 }
-
 
 /**
  * @brief helper function for parse_tokens
@@ -269,9 +288,8 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode sub_parse_tokens(void) {
-
+    return MC3_NO_ERROR;
 }
-
 
 /**
  * @brief creates parse tree using tokens
@@ -285,7 +303,6 @@ static MC3_ErrorCode parse_tokens(struct TokensList* list) {
     (void) list;
     return MC3_NO_ERROR;
 }
-
 
 /* ===== Error Handling Functions =====*/
 
@@ -302,11 +319,16 @@ const char* getErrorString(const MC3_ErrorCode err) {
     }
 }
 
+void write_error(MC3_ErrorCode* err_obj, MC3_ErrorCode code) {
+    if (err_obj != NULL)
+        *err_obj = code;
+}
 
 /* ===== Debugging Functions =====*/
 
 /* DEBUGGING */
-void print_token(const struct EquToken tkn) {
+// TODO: Update functions to use get_type_str() correctly
+const char* get_type_str(const struct EquToken tkn) {
     switch (tkn.type) {
         case OP_ADD:
             printf("OP_ADD");
@@ -362,61 +384,53 @@ void print_token(const struct EquToken tkn) {
     }
 }
 
-
 /* DEBUGGING */
 void print_tokens(const struct TokensList* list) {
     for (size_t i = 0; i < list->tkns_pos; i++) {
-        printf("%-2zu: ", i);
-        print_token(list->tokens[i]);
+        if (list->tokens[i].type == TYPE_INTEGER) {
+            printf("%-2zu: INTEGER(%lld)", i, list->tokens[i].ivalue);
+        } else if (list->tokens[i].type == TYPE_DECIMAL) {
+            printf("%-2zu: DECIMAL(%lf)", i, list->tokens[i].fvalue);
+        } else {
+            const char* type = get_type_str(list->tokens[i]);
+            printf("%-2zu: %s", i, type);
+        }
         puts("");
     }
 }
 
-
 /* DEBUGGING */
 void print_compact_tokens(const struct TokensList* list) {
     printf("[ ");
-    for (unsigned int i = 0; i < list->tkns_pos; i++) {
-        print_token(list->tokens[i]);
+    for (size_t i = 0; i < list->tkns_pos; i++) {
+        if (list->tokens[i].type == TYPE_INTEGER) {
+            printf("%-2zu: INTEGER(%lld)", i, list->tokens[i].ivalue);
+        } else if (list->tokens[i].type == TYPE_DECIMAL) {
+            printf("%-2zu: DECIMAL(%lf)", i, list->tokens[i].fvalue);
+        } else {
+            const char* type = get_type_str(list->tokens[i]);
+            printf("%-2zu: %s", i, type);
+        }
         printf(", ");
     }
     puts("]");
 }
 
-
-/* DEBUGGING */
+/* DEBUGGING (NOT IMPLEMENTED YET) */
 void print_tokens_full(const struct TokensList* list) {
-    for (unsigned int i = 0; i < list->tkns_pos; i++) {
-        printf("%02u: ", i);
-        print_token(list->tokens[i]);
-        printf(" | left: ");
-        if (list->tokens[i].left_operand == NULL) {
-            printf(" | left: NULL");
-        } else {
-            printf(" | left: ");
-            print_token(*(list->tokens[i].left_operand));
-        }
-        printf(" | right: ");
-        if (list->tokens[i].right_operand == NULL) {
-            printf(" | right: NULL");
-        } else {
-            printf(" | right: ");
-            print_token(*(list->tokens[i].left_operand));
-        }
-        puts("");
-    }
+    (void) list;
 }
 
-
 /**
- * @brief evaluates a mathematical expression from a string, returning the result as a double.
- * Calculator supports all basic arithmetic operators: +, -, *, /, and ^. Also supports basic  
- * scientific functions such as ln, sin and constants such as e and pi. The calculator follows 
- * standard PEMDAS order of operations. 
+ * @brief evaluates a mathematical expression from a string, returning the
+ * result as a double. Calculator supports all basic arithmetic operators:
+ * +, -, *, /, and ^. Also supports basic scientific functions such as ln,
+ * sin and constants such as e and pi. The calculator follows  standard PEMDAS
+ * order of operations. 
  * 
  * @param equ 
- * @param err if parameter is NULL, then the error will not be set. Otherwise, the value of any error
- * that occurs is written to `err`.
+ * @param err if parameter is NULL, then the error will not be set. Otherwise,
+ * the value of any error that occurs is written to `err`.
  * @return double 
  */
 double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
@@ -426,12 +440,25 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     error_code = tokenize(equ, &tokens_list);
+
+    if (error_code != MC3_NO_ERROR) {
+        write_error(err, error_code);
+        return 0.0;
+    }
+
     error_code = parse_tokens(&tokens_list);
+    if (error_code != MC3_NO_ERROR)
+        goto error_occured;
 
     print_compact_tokens(&tokens_list);
+    if (error_code != MC3_NO_ERROR)
+        goto error_occured;
 
-    if (err != NULL) 
-        *err = error_code;
 
-    return 0.0;
+    error_occured: {
+        write_error(err, error_code);
+        return 0.0;
+    }
+
+    return -0.0;
 }
