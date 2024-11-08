@@ -7,8 +7,6 @@ void test_tokenization(void) {
 
     MC3_evaluate("2 + 4 - 6 * 8 / 10 ^ 12", &error_code);
     MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
-    puts(getErrorString(error_code));
-
     MC3_evaluate("8 * (2 + 4)", &error_code);
     MLOG_test(error_code == MC3_NO_ERROR, "8 * (2 + 4)");
     MC3_evaluate("sin(pi / 2)", &error_code);
@@ -17,11 +15,14 @@ void test_tokenization(void) {
     MLOG_test(error_code == MC3_NO_ERROR, "ln(e ^ 5)");
     MC3_evaluate("2x * 5", &error_code);
     MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "2x * 5");
+    MC3_evaluate("5 Ω 2", &error_code);
+    MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "5 Ω 2");
 }
 
 
 void test_parsing(void) {}
 
+void test_evaulation(void) {}
 
 int main(void) {
     test_tokenization();

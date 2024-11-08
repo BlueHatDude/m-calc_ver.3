@@ -181,20 +181,25 @@ static inline void set_token(struct EquToken* dest, enum TokenType type,
 /* ===== Tokens List Functions =====*/
 
 struct TokensList init_list(void) {
-    struct TokensList list;
+    struct TokensList list = {
+        .capacity=MAX_TOKENS,
+        .tkns_pos=0,
+        .op_pos=0
+    };
+
     for (int i = 0; i < MAX_TOKENS; i++)
         list.tokens[i].type = TYPE_EMPTY;
-    list.capacity = MAX_TOKENS;
-    list.tkns_pos = 0;
 
     return list;
 }
 
-static void add_operator(struct TokensList* list, const char ch) {
-    if (list->op_pos < (list->capacity - 1)) {
-        struct EquToken token;
-        enum TokenType type = char_to_type(ch);
-        set_token(&token, type, 0.0);
+static void add_operator(struct TokensList* list, const char* equ,
+                         int* iterator) {
+    if (list->tkns_pos < (list->capacity - 1)) {
+        const enum TokenType TYPE = char_to_type(equ[*iterator]);
+        set_token(&list->tokens[list->tkns_pos], TYPE, 0);
+        list->tkns_pos++;
+        (*iterator)++;
     }
 }
 
@@ -249,23 +254,20 @@ static void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
-
 /* ===== Calculator Functions =====*/
 
 /**
- * @brief tokenizes string `equ` and reads into `tkns`
- * 
- * @param equ 
- * @param tkns 
- * @param tkns_size 
+ * @brief takes string `equ` and tokenizes it into EquTokens, writing to `list`.
+ *  
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
     const int EQU_LENGTH = strlen(equ);
 
-    for (int i = 0; i < EQU_LENGTH; i++) {
+    int i = 0;
+    while (i < EQU_LENGTH) {
         if (is_operator(equ[i]) || is_grouping(equ[i])) {
-            add_operator(list, equ[i]);
+            add_operator(list, equ, &i);
         } else if (isdigit(equ[i])) {
             add_number(list, equ, &i);
         } else if (is_func(equ, i)) {
@@ -273,34 +275,12 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
         } else if (is_constant(equ, i)) {
             add_constant(list, equ, &i);
         } else if (equ[i] == ' ') {
-            continue;
+            i++;
         } else {
             return MC3_INVALID_CHARACTER_FOUND;
         }
     }
 
-    return MC3_NO_ERROR;
-}
-
-/**
- * @brief helper function for parse_tokens
- * 
- * @return MC3_ErrorCode 
- */
-static MC3_ErrorCode sub_parse_tokens(void) {
-    return MC3_NO_ERROR;
-}
-
-/**
- * @brief creates parse tree using tokens
- * 
- * @param tkns 
- * @param size 
- * @return MC3_ErrorCode 
- */
-static MC3_ErrorCode parse_tokens(struct TokensList* list) {
-    /* [INT, ADD, INT, SUB, INT, MULT, INT, DIV, INT, EXP, INT] */
-    (void) list;
     return MC3_NO_ERROR;
 }
 
@@ -330,57 +310,24 @@ void write_error(MC3_ErrorCode* err_obj, MC3_ErrorCode code) {
 // TODO: Update functions to use get_type_str() correctly
 const char* get_type_str(const struct EquToken tkn) {
     switch (tkn.type) {
-        case OP_ADD:
-            printf("OP_ADD");
-            break;
-        case OP_SUB:
-            printf("OP_SUB");
-            break;
-        case OP_MULT:
-            printf("OP_MULT");
-            break;
-        case OP_DIV:
-            printf("OP_DIV");
-            break;
-        case OP_EXP:
-            printf("OP_EXP");
-            break;
-        case PAR_LEFT:
-            printf("PAR_LEFT");
-            break;
-        case PAR_RIGHT:
-            printf("PAR_RIGHT");
-            break;
-        case TYPE_INTEGER:
-            printf("TYPE_INTEGER: %lld",  tkn.ivalue);
-            break;
-        case TYPE_DECIMAL:
-            printf("TYPE_DECIMAL: %lf", tkn.fvalue);
-            break;
-        case TYPE_EMPTY:
-            printf("TYPE_EMPTY");
-            break;
-        case FN_SIN:
-            printf("FN_SIN");
-            break;
-        case FN_COS:
-            printf("FN_COS");
-            break;
-        case FN_TAN:
-            printf("FN_TAN");
-            break;
-        case FN_LOG_10:
-            printf("FN_LOG_10");
-            break;
-        case FN_LOG_E:
-            printf("FN_LOG_E");
-            break;
-        case CONSTANT_PI:
-            printf("CONSTANT_PI");
-            break;
-        case CONSTANT_E:
-            printf("CONSTANT_E");
-            break;
+        case OP_ADD: return "OP_ADD";
+        case OP_SUB: return "OP_SUB";
+        case OP_MULT: return "OP_MULT";
+        case OP_DIV: return "OP_DIV";
+        case OP_EXP: return "OP_EXP";
+        case PAR_LEFT: return "PAR_LEFT";
+        case PAR_RIGHT: return "PAR_RIGHT";
+        case TYPE_INTEGER: return "TYPE_INTEGER";
+        case TYPE_DECIMAL: return "TYPE_DECIMAL";
+        case TYPE_EMPTY: return "TYPE_EMPTY";
+        case FN_SIN: return "FN_SIN";
+        case FN_COS: return "FN_COS";
+        case FN_TAN: return "FN_TAN";
+        case FN_LOG_10: return "FN_LOG_10";
+        case FN_LOG_E: return "FN_LOG_E";
+        case CONSTANT_PI: return "CONSTANT_PI";
+        case CONSTANT_E: return "CONSTANT_E";
+        break;
     }
 }
 
@@ -404,14 +351,14 @@ void print_compact_tokens(const struct TokensList* list) {
     printf("[ ");
     for (size_t i = 0; i < list->tkns_pos; i++) {
         if (list->tokens[i].type == TYPE_INTEGER) {
-            printf("%-2zu: INTEGER(%lld)", i, list->tokens[i].ivalue);
+            printf("INTEGER(%lld)", list->tokens[i].ivalue);
         } else if (list->tokens[i].type == TYPE_DECIMAL) {
-            printf("%-2zu: DECIMAL(%lf)", i, list->tokens[i].fvalue);
+            printf("DECIMAL(%lf)", list->tokens[i].fvalue);
         } else {
             const char* type = get_type_str(list->tokens[i]);
-            printf("%-2zu: %s", i, type);
+            printf("%s", type);
         }
-        printf(", ");
+        printf((i == (list->tkns_pos - 1)) ? " " : ", ");
     }
     puts("]");
 }
@@ -440,21 +387,16 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     error_code = tokenize(equ, &tokens_list);
-
-    if (error_code != MC3_NO_ERROR) {
-        write_error(err, error_code);
-        return 0.0;
-    }
-
-    error_code = parse_tokens(&tokens_list);
     if (error_code != MC3_NO_ERROR)
         goto error_occured;
 
-    print_compact_tokens(&tokens_list);
-    if (error_code != MC3_NO_ERROR)
-        goto error_occured;
+    // error_code = parse_tokens(&tokens_list);
+    // if (error_code != MC3_NO_ERROR)
+    //     goto error_occured;
 
+    // print_compact_tokens(&tokens_list);
 
+    /* goto label for consistent error handling */
     error_occured: {
         write_error(err, error_code);
         return 0.0;
