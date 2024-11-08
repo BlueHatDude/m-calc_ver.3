@@ -6,8 +6,8 @@ STANDARD=-std=c18
 .PHONY: app tests clean
 
 
-app: mcalc3.o
-	$(CC) -o mcalc3 mcalc3.o src/tests.c $(STANDARD) $(WARNINGS)
+app: mcalc3.o src/main.c
+	$(CC) -o mcalc3 mcalc3.o src/main.c $(STANDARD) $(WARNINGS)
 	rm *.o
 
 mcalc3.o: src/mcalc3.c
