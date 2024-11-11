@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include "mcalc3.h"
 #include <stdlib.h>
 #include <stddef.h>
@@ -67,7 +66,7 @@ struct EquToken {
     enum TokenType type;
     
     union {
-        int64_t ivalue;
+        long long ivalue;
         double fvalue;
     }; 
 
@@ -172,7 +171,7 @@ static inline void set_token(struct EquToken* dest, enum TokenType type,
     dest->type = type;
 
     if (type == TYPE_INTEGER) {
-        dest->ivalue = (int64_t) value;
+        dest->ivalue = (long long) value;
     } else if (type == TYPE_DECIMAL) {
         dest->fvalue = value;
     }
@@ -327,7 +326,7 @@ const char* get_type_str(const struct EquToken tkn) {
         case FN_LOG_E: return "FN_LOG_E";
         case CONSTANT_PI: return "CONSTANT_PI";
         case CONSTANT_E: return "CONSTANT_E";
-        break;
+        default: return NULL;
     }
 }
 
