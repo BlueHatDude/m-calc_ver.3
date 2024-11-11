@@ -38,6 +38,8 @@ ln(e^5) = 5.0
 
 ## Supported Functions
 - Basic arithmetic operators: `+`, `-`, `*`, `/`, `^`.
+- Grouping: `(` and `)`
+    - Do not use `[]` or `{}`.
 - Trignonometric functions: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`.
     - inverse functions are not currently implemented.
 - Logarithms: `ln` and `log`
