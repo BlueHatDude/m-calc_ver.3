@@ -261,8 +261,10 @@ static void add_constant(struct TokensList* list, const char* equ,
 /* ===== Calculator Functions =====*/
 
 /**
- * @brief takes string `equ` and tokenizes it into EquTokens, writing to `list`.
+ * @brief Takes string `equ` and tokenizes it into EquTokens, writing to `list`.
  *  
+ * @param equ
+ * @param list
  * @return MC3_ErrorCode 
  */
 static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
@@ -289,9 +291,35 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
     return MC3_NO_ERROR;
 }
 
+/**
+ * @brief Generates parse tree using tokens in `list`. Does not create a new
+ * list, only edits the `left_operand` and `right_operand` of tokens in `list`. 
+ * 
+ * @param list 
+ * @param start This function writes the root node of the tree to `root`
+ * because it returns an error code. This should not be a pointer to the root
+ * of a parse tree. 
+ * @return MC3_ErrorCode 
+ */
+static MC3_ErrorCode generate_parse_tree(struct TokensList* list,
+                                         struct EquToken* root) {
+    (void) list;
+    (void) root;
+    
+    return MC3_NO_ERROR;
+}
+
+static MC3_ErrorCode evaluate_parse_tree(struct TokensList* list,
+                                         struct EquToken* root) {
+    (void) list,
+    (void) root;
+
+    return MC3_NO_ERROR;
+}
+
 /* ===== Error Handling Functions =====*/
 
-const char* getErrorString(const MC3_ErrorCode err) {
+const char* get_error_str(const MC3_ErrorCode err) {
     switch (err) {
     case MC3_NO_ERROR:
         return "No error";
@@ -372,6 +400,8 @@ void print_compact_tokens(const struct TokensList* list) {
 void print_tokens_full(const struct TokensList* list) {
     (void) list;
 }
+
+/* ===== Main Function =====*/
 
 /**
  * @brief evaluates a mathematical expression from a string, returning the
