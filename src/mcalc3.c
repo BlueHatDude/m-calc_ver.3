@@ -62,14 +62,20 @@ enum TokenType {
 
 
 struct EquToken {
-    
+    /* Stores the type of the token, TYPE_EMPTY means the token hasn't been
+       intialized. */
     enum TokenType type;
     
+    /* Stores the value contained in the token, varies based on type. Using an
+       integer and floating point data type allows for storing larger range of
+       numbers */
     union {
         long long ivalue;
         double fvalue;
     }; 
 
+    /* Used for constructing parse tree, should only be non-NULL for
+    operators */
     struct EquToken* left_operand;
     struct EquToken* right_operand;
 };
@@ -82,9 +88,6 @@ struct TokensList {
     unsigned int capacity;
     /* current index of tokens */
     unsigned int tkns_pos;
-    /* positions of operators in tokens */
-    unsigned int operators[MAX_TOKENS];
-    unsigned int op_pos;
 };
 
 /* ===== Token Functions =====*/
@@ -183,11 +186,13 @@ struct TokensList init_list(void) {
     struct TokensList list = {
         .capacity=MAX_TOKENS,
         .tkns_pos=0,
-        .op_pos=0
     };
 
-    for (int i = 0; i < MAX_TOKENS; i++)
+    for (int i = 0; i < MAX_TOKENS; i++) {
         list.tokens[i].type = TYPE_EMPTY;
+        list.tokens[i].left_operand = NULL;
+        list.tokens[i].right_operand = NULL;
+    }
 
     return list;
 }
@@ -266,6 +271,7 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
     int i = 0;
     while (i < EQU_LENGTH) {
         if (is_operator(equ[i]) || is_grouping(equ[i])) {
+            /* parenthesis are also considered operators in this context */
             add_operator(list, equ, &i);
         } else if (isdigit(equ[i])) {
             add_number(list, equ, &i);
