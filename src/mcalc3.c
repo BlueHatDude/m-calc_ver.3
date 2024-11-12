@@ -88,6 +88,10 @@ struct TokensList {
     unsigned int capacity;
     /* current index of tokens */
     unsigned int tkns_pos;
+    /* indexes of operators in tokens */
+    unsigned int operators[MAX_TOKENS];
+    /* current index of operators[] */
+    unsigned int op_pos;
 };
 
 /* ===== Token Functions =====*/
@@ -186,12 +190,14 @@ struct TokensList init_list(void) {
     struct TokensList list = {
         .capacity=MAX_TOKENS,
         .tkns_pos=0,
+        .op_pos=0
     };
 
     for (int i = 0; i < MAX_TOKENS; i++) {
         list.tokens[i].type = TYPE_EMPTY;
         list.tokens[i].left_operand = NULL;
         list.tokens[i].right_operand = NULL;
+        list.operators[i] = 0;
     }
 
     return list;
@@ -202,8 +208,12 @@ static void add_operator(struct TokensList* list, const char* equ,
     if (list->tkns_pos < (list->capacity - 1)) {
         const enum TokenType TYPE = char_to_type(equ[*iterator]);
         set_token(&list->tokens[list->tkns_pos], TYPE, 0);
+        list->operators[list->op_pos] = list->tkns_pos;
+
+
         list->tkns_pos++;
         (*iterator)++;
+        list->op_pos++;
     }
 }
 
@@ -258,6 +268,16 @@ static void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
+/**
+ * @brief Using list.operators[], an array of indexes of operators in
+ * list.tokens[], sorts the positions of operators by following PEMDAS.
+ * 
+ * @param list 
+ */
+static void sort_operators(struct TokensList* list) {
+    
+}
+
 /* ===== Calculator Functions =====*/
 
 /**
@@ -305,6 +325,8 @@ static MC3_ErrorCode generate_parse_tree(struct TokensList* list,
                                          struct EquToken* root) {
     (void) list;
     (void) root;
+
+    /* start at exponents */
     
     return MC3_NO_ERROR;
 }
