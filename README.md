@@ -38,6 +38,8 @@ ln(e^5) = 5.0
 
 ## Supported Functions
 - Basic arithmetic operators: `+`, `-`, `*`, `/`, `^`.
+    - `mcalc3` does not support implicit negatives (e.g. `5 + -2`)
+    - `mcalc3` does not support implicit multiplication (e.g. `(2+5)(3)`)
 - Grouping: `(` and `)`
     - Do not use `[]` or `{}`.
 - Trignonometric functions: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`.
