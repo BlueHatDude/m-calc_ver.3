@@ -268,6 +268,10 @@ static void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
+static enum TokenType get_type_at(struct TokensList* list, const int index) {
+    return list->tokens[index].type;
+}
+
 /**
  * @brief Using list.operators[], an array of indexes of operators in
  * list.tokens[], sorts the positions of operators by following PEMDAS.
@@ -275,7 +279,12 @@ static void add_constant(struct TokensList* list, const char* equ,
  * @param list 
  */
 static void sort_operators(struct TokensList* list) {
-    
+    /* 2 * (3 + 4) */
+    enum TokenType example[20] = {
+        TYPE_INTEGER, OP_MULT, PAR_LEFT, TYPE_INTEGER, OP_ADD, TYPE_INTEGER, 
+    };
+    (void) example;
+    (void) list;
 }
 
 /* ===== Calculator Functions =====*/
@@ -310,6 +319,9 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
 
     return MC3_NO_ERROR;
 }
+
+static MC3_ErrorCode get_left_operand(struct TokensList* list, int index);
+static MC3_ErrorCode get_right_operand(struct TokensList* list, int index);
 
 /**
  * @brief Generates parse tree using tokens in `list`. Does not create a new
@@ -386,6 +398,8 @@ const char* get_type_str(const struct EquToken tkn) {
     }
 }
 
+// void print_token(...);
+
 /* DEBUGGING */
 void print_tokens(const struct TokensList* list) {
     for (size_t i = 0; i < list->tkns_pos; i++) {
@@ -420,6 +434,11 @@ void print_compact_tokens(const struct TokensList* list) {
 
 /* DEBUGGING (NOT IMPLEMENTED YET) */
 void print_tokens_full(const struct TokensList* list) {
+    (void) list;
+}
+
+/* DEBUGGING */
+void print_tokens_list(const struct TokensList* list) {
     (void) list;
 }
 
