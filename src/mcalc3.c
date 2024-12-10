@@ -90,11 +90,12 @@ struct TokensList {
 };
 
 struct TreeNode {
-    struct Token* left;
-    struct Token* right;
+    struct EquToken* token;
+    struct EquToken* left_operand;
+    struct EquToken* right_operand;
 };
 
-/* ===== Tokenization Functions =====*/
+/* ===== Token Functions =====*/
 
 enum TokenType char_to_type(char ch) {
     switch (ch) {
@@ -173,7 +174,11 @@ bool is_func(const char* str, const int index) {
     return false;
 }
 
-void set_token(struct Token* dest, enum TokenType type,
+static bool is_op_type(enum TokenType type) {
+    return ((type >= OP_ADD) && (type <= OP_EXP));
+}
+
+static inline void set_token(struct EquToken* dest, enum TokenType type,
                              double value) {
     dest->type = type;
 
@@ -183,6 +188,8 @@ void set_token(struct Token* dest, enum TokenType type,
         dest->fvalue = value;
     }
 }
+
+/* ===== Tokenization Functions =====*/
 
 struct TokensList new_list(void) {
     struct TokensList list = {
@@ -266,7 +273,21 @@ void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
-enum TokenType get_type_at(struct TokensList* list, const int index) {
+static struct EquToken get_token_at(struct TokensList* list, const unsigned int index) {
+    if (index >= list->capacity) {
+        fprintf(stderr, "Trying to access invalid index of TokensList");
+        exit(EXIT_FAILURE);
+    }
+    
+    return list->tokens[index];
+}
+
+static enum TokenType get_type_at(struct TokensList* list, const unsigned int index) {
+    if (index >= list->capacity) {
+        fprintf(stderr, "Trying to access invalid index of TokensList");
+        exit(EXIT_FAILURE);
+    }
+
     return list->tokens[index].type;
 }
 
@@ -307,32 +328,35 @@ void tokenize(const char* equ, struct TokensList* list,
 /* ===== Parsing Functions =====*/
 
 struct Parser {
-    struct TokensList* tokens_list;
+    struct TokensList* token_list;
     unsigned int index;
 };
 
 struct Parser new_parser(struct TokensList* list) {
-    struct Parser parser = { .tokens_list=list, .index=0 };
+    struct Parser parser = {
+        .token_list = list,
+        .index = 0,
+    };
+
     return parser;
 }
 
-struct Token* get_current(struct Parser* parser) {
-    return &parser->tokens_list->tokens[parser->index];
-}
-
-void next_token(struct Parser* parser) {
+static void advance(struct Parser* parser) {
     parser->index++;
 }
 
+static struct EquToken get_current(struct Parser* parser) {
+    return parser->token_list->tokens[parser->index];
+}
+
+static void eval_expr(struct Parser* parser);
+
 /**
- * @brief Creates a parse tree from list of tokens and returns root 
+ * @brief generates a parse tree from list of tokens.
  * 
- * @param list Parameter should already be initalized via the tokenize()
- * function. 
+ * @returns A reference to the root of the parse tree.  
  */
-struct TreeNode* parse(struct TokensList* list, MC3_ErrorCode* err) {
-    (void) list;
-    (void) err;
+static struct TreeNode* parse(struct Parser* parser) {
     return NULL;
 }
 
@@ -356,29 +380,34 @@ void write_error(MC3_ErrorCode* err_obj, MC3_ErrorCode code) {
         *err_obj = code;
 }
 
-/* ===== Main Function =====*/
+// /* ===== Main Function =====*/
 
-/**
- * @brief evaluates a mathematical expression from a string, returning the
- * result as a double. Calculator supports all basic arithmetic operators:
- * +, -, *, /, and ^. Also supports basic scientific functions such as ln,
- * sin and constants such as e and pi. The calculator follows  standard PEMDAS
- * order of operations. 
- * 
- * @param equ 
- * @param err if parameter is NULL, then the error will not be set. Otherwise,
- * the value of any error that occurs is written to `err`.
- * @return double 
- */
+static double eval_tree();
+
+// /**
+//  * @brief evaluates a mathematical expression from a string, returning the
+//  * result as a double. Calculator supports all basic arithmetic operators:
+//  * +, -, *, /, and ^. Also supports basic scientific functions such as ln,
+//  * sin and constants such as e and pi. The calculator follows  standard PEMDAS
+//  * order of operations. 
+//  * 
+//  * @param equ 
+//  * @param err if parameter is NULL, then the error will not be set. Otherwise,
+//  * the value of any error that occurs is written to `err`.
+//  * @return double 
+//  */
 double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
+    (void) equ;
+    
     struct TokensList tokens_list = new_list();
+    struct Parser parser = new_parser(&tokens_list);
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     tokenize(equ, &tokens_list, &error_code);
     if (error_code != MC3_NO_ERROR)
         goto error_occured;
 
-    parse(&tokens_list, &error_code);
+    parse(&parser);
 
     /* goto label for consistent error handling */
     error_occured: {
