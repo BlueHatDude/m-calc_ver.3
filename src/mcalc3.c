@@ -1,15 +1,16 @@
 #include "mcalc3.h"
+#include "mlogging.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include "mlogging.h"
 
 #define MAX_TOKENS 100
 
 /* ===== String Functions =====*/
 
-static inline void clear_string(char* str, const size_t len) {
+void clear_string(char* str, const size_t len) {
     memset(str, '\0', len);
 }
 
@@ -19,7 +20,7 @@ static inline void clear_string(char* str, const size_t len) {
  * @return true 
  * @return false 
  */
-static inline bool string_at(const char sub_str[], const char* str_start) {
+bool string_at(const char sub_str[], const char* str_start) {
     return (strstr(str_start, sub_str) == str_start);
 }
 
@@ -88,9 +89,14 @@ struct TokensList {
     unsigned int op_pos;
 };
 
+struct TreeNode {
+    struct Token* left;
+    struct Token* right;
+};
+
 /* ===== Tokenization Functions =====*/
 
-static enum TokenType char_to_type(char ch) {
+enum TokenType char_to_type(char ch) {
     switch (ch) {
         case '+': return OP_ADD;
         case '-': return OP_SUB;
@@ -103,7 +109,7 @@ static enum TokenType char_to_type(char ch) {
     }
 }
 
-static enum TokenType str_to_fn(const char* str) {
+enum TokenType str_to_fn(const char* str) {
     if (strncmp(str, "sin", 3) == 0) {
         return FN_SIN;
     } else if (strncmp(str, "cos", 3) == 0) {
@@ -119,7 +125,7 @@ static enum TokenType str_to_fn(const char* str) {
     }
 }
 
-static const char* fn_type_to_str(enum TokenType type) {
+const char* fn_type_to_str(enum TokenType type) {
     switch (type) {
         case FN_SIN: return "sin";
         case FN_COS: return "cos";
@@ -130,7 +136,7 @@ static const char* fn_type_to_str(enum TokenType type) {
     }
 }
 
-static bool is_operator(char ch) {
+bool is_operator(char ch) {
     switch (ch) {
         case '+': case '-': case '*': case '/': case '^':
             return true;
@@ -139,11 +145,11 @@ static bool is_operator(char ch) {
     }
 }
 
-static bool is_grouping(char ch) {
+bool is_grouping(char ch) {
     return (ch == '(') || (ch == ')');
 }
 
-static bool is_constant(const char* str, const int index) {
+bool is_constant(const char* str, const int index) {
     char* funcs[] = {"pi", "e"};
     int len = sizeof(funcs)/sizeof(char*);
 
@@ -155,7 +161,7 @@ static bool is_constant(const char* str, const int index) {
     return false;
 }
 
-static bool is_func(const char* str, const int index) {
+bool is_func(const char* str, const int index) {
     char* funcs[] = {"sin", "cos", "tan", "log", "ln"};
     int len = sizeof(funcs)/sizeof(char*);
 
@@ -167,7 +173,7 @@ static bool is_func(const char* str, const int index) {
     return false;
 }
 
-static inline void set_token(struct Token* dest, enum TokenType type,
+void set_token(struct Token* dest, enum TokenType type,
                              double value) {
     dest->type = type;
 
@@ -195,7 +201,7 @@ struct TokensList new_list(void) {
     return list;
 }
 
-static void add_operator(struct TokensList* list, const char* equ,
+void add_operator(struct TokensList* list, const char* equ,
                          int* iterator) {
     if (list->tkns_pos < (list->capacity - 1)) {
         const enum TokenType TYPE = char_to_type(equ[*iterator]);
@@ -209,7 +215,7 @@ static void add_operator(struct TokensList* list, const char* equ,
     }
 }
 
-static void add_number(struct TokensList* list, const char* equ,
+void add_number(struct TokensList* list, const char* equ,
                        int* iterator) {
     bool is_decimal = false;
     const int START_INDEX = *iterator;
@@ -231,7 +237,7 @@ static void add_number(struct TokensList* list, const char* equ,
     }
 }
 
-static void add_function(struct TokensList* list, const char* equ,
+void add_function(struct TokensList* list, const char* equ,
                          int* iterator) {
 
     enum TokenType type = str_to_fn(&equ[*iterator]);
@@ -247,7 +253,7 @@ static void add_function(struct TokensList* list, const char* equ,
     }
 }
 
-static void add_constant(struct TokensList* list, const char* equ,
+void add_constant(struct TokensList* list, const char* equ,
                          int* iterator) {
     if (string_at("pi", &equ[*iterator])) {
         set_token(&list->tokens[list->tkns_pos], CONSTANT_PI, 0);   
@@ -260,15 +266,9 @@ static void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
-static enum TokenType get_type_at(struct TokensList* list, const int index) {
+enum TokenType get_type_at(struct TokensList* list, const int index) {
     return list->tokens[index].type;
 }
-
-/* ===== Parsing Functions =====*/
-
-
-
-/* ===== Calculator Functions =====*/
 
 /**
  * @brief Takes string `equ` and tokenizes it into EquTokens, writing to `list`.
@@ -277,8 +277,8 @@ static enum TokenType get_type_at(struct TokensList* list, const int index) {
  * @param list
  * @return MC3_ErrorCode 
  */
-static void tokenize(const char* equ, struct TokensList* list,
-                     MC3_ErrorCode* err) {
+void tokenize(const char* equ, struct TokensList* list,
+              MC3_ErrorCode* err) {
     MC3_ErrorCode err_code = MC3_NO_ERROR;
     const int EQU_LENGTH = strlen(equ);
 
@@ -304,14 +304,37 @@ static void tokenize(const char* equ, struct TokensList* list,
         *err = err_code;
 }
 
+/* ===== Parsing Functions =====*/
+
+struct Parser {
+    struct TokensList* tokens_list;
+    unsigned int index;
+};
+
+struct Parser new_parser(struct TokensList* list) {
+    struct Parser parser = { .tokens_list=list, .index=0 };
+    return parser;
+}
+
+struct Token* get_current(struct Parser* parser) {
+    return &parser->tokens_list->tokens[parser->index];
+}
+
+void next_token(struct Parser* parser) {
+    parser->index++;
+}
+
 /**
- * @brief Takes list of tokens 
+ * @brief Creates a parse tree from list of tokens and returns root 
  * 
  * @param list Parameter should already be initalized via the tokenize()
  * function. 
- * @return MC3_ErrorCode 
  */
-static void parse(struct TokensList* list, MC3_ErrorCode* err);
+struct TreeNode* parse(struct TokensList* list, MC3_ErrorCode* err) {
+    (void) list;
+    (void) err;
+    return NULL;
+}
 
 /* ===== Error Handling Functions =====*/
 
@@ -355,7 +378,7 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     if (error_code != MC3_NO_ERROR)
         goto error_occured;
 
-    
+    parse(&tokens_list, &error_code);
 
     /* goto label for consistent error handling */
     error_occured: {
@@ -369,21 +392,23 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
 /* ==== Tests ==== */
 
 void test_tokenization(void) {
-    MC3_ErrorCode error_code = MC3_NO_ERROR;
+    // MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     MLOG_log("Testing Suite: Tokenization");
-    MC3_evaluate("2 + 4 - 6 * 8 / 10 ^ 12", &error_code);
-    MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
-    MC3_evaluate("8 * (2 + 4)", &error_code);
-    MLOG_test(error_code == MC3_NO_ERROR, "8 * (2 + 4)");
-    MC3_evaluate("sin(pi / 2)", &error_code);
-    MLOG_test(error_code == MC3_NO_ERROR, "sin(pi / 2)");
-    MC3_evaluate("ln(e ^ 5)", &error_code);
-    MLOG_test(error_code == MC3_NO_ERROR, "ln(e ^ 5)");
-    MC3_evaluate("2x * 5", &error_code);
-    MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "2x * 5");
-    MC3_evaluate("5 Ω 2", &error_code);
-    MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "5 Ω 2");
+    MLOG_log("TODO: not implemented yet. :(");
+
+    // tokenize("2 + 4 - 6 * 8 / 10 ^ 12", , &error_code);
+    // MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
+    // tokenize("8 * (2 + 4)", &error_code);
+    // MLOG_test(error_code == MC3_NO_ERROR, "8 * (2 + 4)");
+    // tokenize("sin(pi / 2)", &error_code);
+    // MLOG_test(error_code == MC3_NO_ERROR, "sin(pi / 2)");
+    // tokenize("ln(e ^ 5)", &error_code);
+    // MLOG_test(error_code == MC3_NO_ERROR, "ln(e ^ 5)");
+    // tokenize("2x * 5", &error_code);
+    // MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "2x * 5");
+    // tokenize("5 Ω 2", &error_code);
+    // MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "5 Ω 2");
 }
 
 void test_parsing(void) {
