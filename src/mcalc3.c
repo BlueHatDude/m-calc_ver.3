@@ -1,21 +1,17 @@
 #include "mcalc3.h"
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
 #include <ctype.h>
 #include <stdbool.h>
-#include <stdio.h> /* only for debugging purposes */
-
+#include "mlogging.h"
 
 #define MAX_TOKENS 100
-
 
 /* ===== String Functions =====*/
 
 static inline void clear_string(char* str, const size_t len) {
     memset(str, '\0', len);
 }
-
 
 /**
  * @brief checks to see if substring is in string at str_start 
@@ -60,8 +56,7 @@ enum TokenType {
 
 };
 
-
-struct EquToken {
+struct Token {
     /* Stores the type of the token, TYPE_EMPTY means the token hasn't been
        intialized. */
     enum TokenType type;
@@ -76,14 +71,13 @@ struct EquToken {
 
     /* Used for constructing parse tree, should only be non-NULL for
     operators */
-    struct EquToken* left_operand;
-    struct EquToken* right_operand;
+    struct Token* left_operand;
+    struct Token* right_operand;
 };
-
 
 struct TokensList {
     /* array of tokens */
-    struct EquToken tokens[MAX_TOKENS];
+    struct Token tokens[MAX_TOKENS];
     /* maximum number of tokens which can be stored */
     unsigned int capacity;
     /* current index of tokens */
@@ -94,7 +88,7 @@ struct TokensList {
     unsigned int op_pos;
 };
 
-/* ===== Token Functions =====*/
+/* ===== Tokenization Functions =====*/
 
 static enum TokenType char_to_type(char ch) {
     switch (ch) {
@@ -173,7 +167,7 @@ static bool is_func(const char* str, const int index) {
     return false;
 }
 
-static inline void set_token(struct EquToken* dest, enum TokenType type,
+static inline void set_token(struct Token* dest, enum TokenType type,
                              double value) {
     dest->type = type;
 
@@ -184,9 +178,7 @@ static inline void set_token(struct EquToken* dest, enum TokenType type,
     }
 }
 
-/* ===== Tokens List Functions =====*/
-
-struct TokensList init_list(void) {
+struct TokensList new_list(void) {
     struct TokensList list = {
         .capacity=MAX_TOKENS,
         .tkns_pos=0,
@@ -272,20 +264,9 @@ static enum TokenType get_type_at(struct TokensList* list, const int index) {
     return list->tokens[index].type;
 }
 
-/**
- * @brief Using list.operators[], an array of indexes of operators in
- * list.tokens[], sorts the positions of operators by following PEMDAS.
- * 
- * @param list 
- */
-static void sort_operators(struct TokensList* list) {
-    /* 2 * (3 + 4) */
-    enum TokenType example[20] = {
-        TYPE_INTEGER, OP_MULT, PAR_LEFT, TYPE_INTEGER, OP_ADD, TYPE_INTEGER, 
-    };
-    (void) example;
-    (void) list;
-}
+/* ===== Parsing Functions =====*/
+
+
 
 /* ===== Calculator Functions =====*/
 
@@ -296,7 +277,9 @@ static void sort_operators(struct TokensList* list) {
  * @param list
  * @return MC3_ErrorCode 
  */
-static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
+static void tokenize(const char* equ, struct TokensList* list,
+                     MC3_ErrorCode* err) {
+    MC3_ErrorCode err_code = MC3_NO_ERROR;
     const int EQU_LENGTH = strlen(equ);
 
     int i = 0;
@@ -313,43 +296,22 @@ static MC3_ErrorCode tokenize(const char* equ, struct TokensList* list) {
         } else if (equ[i] == ' ') {
             i++;
         } else {
-            return MC3_INVALID_CHARACTER_FOUND;
+            err_code = MC3_INVALID_CHARACTER_FOUND;
         }
     }
 
-    return MC3_NO_ERROR;
+    if (err != NULL)
+        *err = err_code;
 }
-
-static MC3_ErrorCode get_left_operand(struct TokensList* list, int index);
-static MC3_ErrorCode get_right_operand(struct TokensList* list, int index);
 
 /**
- * @brief Generates parse tree using tokens in `list`. Does not create a new
- * list, only edits the `left_operand` and `right_operand` of tokens in `list`. 
+ * @brief Takes list of tokens 
  * 
- * @param list 
- * @param start This function writes the root node of the tree to `root`
- * because it returns an error code. This should not be a pointer to the root
- * of a parse tree. 
+ * @param list Parameter should already be initalized via the tokenize()
+ * function. 
  * @return MC3_ErrorCode 
  */
-static MC3_ErrorCode generate_parse_tree(struct TokensList* list,
-                                         struct EquToken* root) {
-    (void) list;
-    (void) root;
-
-    /* start at exponents */
-    
-    return MC3_NO_ERROR;
-}
-
-static MC3_ErrorCode evaluate_parse_tree(struct TokensList* list,
-                                         struct EquToken* root) {
-    (void) list,
-    (void) root;
-
-    return MC3_NO_ERROR;
-}
+static void parse(struct TokensList* list, MC3_ErrorCode* err);
 
 /* ===== Error Handling Functions =====*/
 
@@ -371,77 +333,6 @@ void write_error(MC3_ErrorCode* err_obj, MC3_ErrorCode code) {
         *err_obj = code;
 }
 
-/* ===== Debugging Functions =====*/
-
-/* DEBUGGING */
-// TODO: Update functions to use get_type_str() correctly
-const char* get_type_str(const struct EquToken tkn) {
-    switch (tkn.type) {
-        case OP_ADD: return "OP_ADD";
-        case OP_SUB: return "OP_SUB";
-        case OP_MULT: return "OP_MULT";
-        case OP_DIV: return "OP_DIV";
-        case OP_EXP: return "OP_EXP";
-        case PAR_LEFT: return "PAR_LEFT";
-        case PAR_RIGHT: return "PAR_RIGHT";
-        case TYPE_INTEGER: return "TYPE_INTEGER";
-        case TYPE_DECIMAL: return "TYPE_DECIMAL";
-        case TYPE_EMPTY: return "TYPE_EMPTY";
-        case FN_SIN: return "FN_SIN";
-        case FN_COS: return "FN_COS";
-        case FN_TAN: return "FN_TAN";
-        case FN_LOG_10: return "FN_LOG_10";
-        case FN_LOG_E: return "FN_LOG_E";
-        case CONSTANT_PI: return "CONSTANT_PI";
-        case CONSTANT_E: return "CONSTANT_E";
-        default: return NULL;
-    }
-}
-
-// void print_token(...);
-
-/* DEBUGGING */
-void print_tokens(const struct TokensList* list) {
-    for (size_t i = 0; i < list->tkns_pos; i++) {
-        if (list->tokens[i].type == TYPE_INTEGER) {
-            printf("%-2zu: INTEGER(%lld)", i, list->tokens[i].ivalue);
-        } else if (list->tokens[i].type == TYPE_DECIMAL) {
-            printf("%-2zu: DECIMAL(%lf)", i, list->tokens[i].fvalue);
-        } else {
-            const char* type = get_type_str(list->tokens[i]);
-            printf("%-2zu: %s", i, type);
-        }
-        puts("");
-    }
-}
-
-/* DEBUGGING */
-void print_compact_tokens(const struct TokensList* list) {
-    printf("[ ");
-    for (size_t i = 0; i < list->tkns_pos; i++) {
-        if (list->tokens[i].type == TYPE_INTEGER) {
-            printf("INTEGER(%lld)", list->tokens[i].ivalue);
-        } else if (list->tokens[i].type == TYPE_DECIMAL) {
-            printf("DECIMAL(%lf)", list->tokens[i].fvalue);
-        } else {
-            const char* type = get_type_str(list->tokens[i]);
-            printf("%s", type);
-        }
-        printf((i == (list->tkns_pos - 1)) ? " " : ", ");
-    }
-    puts("]");
-}
-
-/* DEBUGGING (NOT IMPLEMENTED YET) */
-void print_tokens_full(const struct TokensList* list) {
-    (void) list;
-}
-
-/* DEBUGGING */
-void print_tokens_list(const struct TokensList* list) {
-    (void) list;
-}
-
 /* ===== Main Function =====*/
 
 /**
@@ -457,20 +348,14 @@ void print_tokens_list(const struct TokensList* list) {
  * @return double 
  */
 double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
-    (void) equ;
-    
-    struct TokensList tokens_list = init_list();
+    struct TokensList tokens_list = new_list();
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
-    error_code = tokenize(equ, &tokens_list);
+    tokenize(equ, &tokens_list, &error_code);
     if (error_code != MC3_NO_ERROR)
         goto error_occured;
 
-    // error_code = parse_tokens(&tokens_list);
-    // if (error_code != MC3_NO_ERROR)
-    //     goto error_occured;
-
-    // print_compact_tokens(&tokens_list);
+    
 
     /* goto label for consistent error handling */
     error_occured: {
@@ -479,4 +364,46 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     }
 
     return -0.0;
+}
+
+/* ==== Tests ==== */
+
+void test_tokenization(void) {
+    MC3_ErrorCode error_code = MC3_NO_ERROR;
+
+    MLOG_log("Testing Suite: Tokenization");
+    MC3_evaluate("2 + 4 - 6 * 8 / 10 ^ 12", &error_code);
+    MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
+    MC3_evaluate("8 * (2 + 4)", &error_code);
+    MLOG_test(error_code == MC3_NO_ERROR, "8 * (2 + 4)");
+    MC3_evaluate("sin(pi / 2)", &error_code);
+    MLOG_test(error_code == MC3_NO_ERROR, "sin(pi / 2)");
+    MC3_evaluate("ln(e ^ 5)", &error_code);
+    MLOG_test(error_code == MC3_NO_ERROR, "ln(e ^ 5)");
+    MC3_evaluate("2x * 5", &error_code);
+    MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "2x * 5");
+    MC3_evaluate("5 Ω 2", &error_code);
+    MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "5 Ω 2");
+}
+
+void test_parsing(void) {
+
+}
+
+void test_evaulation(void) {
+    double result = 0.0;
+
+    MLOG_log("Testing Suite: Evaluation");
+
+    result = MC3_evaluate("2 + 4", NULL);
+    MLOG_test(((int)result) == 6, "2 + 4");
+
+    result = MC3_evaluate("2 * (4 + 8)", NULL);
+    MLOG_test(((int) result) == 24, "2 * (4 + 8)");
+
+    result = MC3_evaluate("(2 + 4) * 8", NULL);
+    MLOG_test(((int)result) == 48, "(2 + 4) * 8");
+
+    result = MC3_evaluate("(2 + 4) / (6 + 8)", NULL);
+    MLOG_test(result == ((double) 6 / 14), "(2 + 4) / (6 + 8)");
 }
