@@ -90,9 +90,9 @@ struct TokensList {
 };
 
 struct TreeNode {
-    struct EquToken* token;
-    struct EquToken* left_operand;
-    struct EquToken* right_operand;
+    struct Token* token;
+    struct Token* left_operand;
+    struct Token* right_operand;
 };
 
 /* ===== Token Functions =====*/
@@ -178,7 +178,7 @@ static bool is_op_type(enum TokenType type) {
     return ((type >= OP_ADD) && (type <= OP_EXP));
 }
 
-static inline void set_token(struct EquToken* dest, enum TokenType type,
+static inline void set_token(struct Token* dest, enum TokenType type,
                              double value) {
     dest->type = type;
 
@@ -273,7 +273,7 @@ void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
-static struct EquToken get_token_at(struct TokensList* list, const unsigned int index) {
+static struct Token get_token_at(struct TokensList* list, const unsigned int index) {
     if (index >= list->capacity) {
         fprintf(stderr, "Trying to access invalid index of TokensList");
         exit(EXIT_FAILURE);
@@ -292,7 +292,7 @@ static enum TokenType get_type_at(struct TokensList* list, const unsigned int in
 }
 
 /**
- * @brief Takes string `equ` and tokenizes it into EquTokens, writing to `list`.
+ * @brief Takes string `equ` and tokenizes it into Tokens, writing to `list`.
  *  
  * @param equ
  * @param list
@@ -345,7 +345,7 @@ static void advance(struct Parser* parser) {
     parser->index++;
 }
 
-static struct EquToken get_current(struct Parser* parser) {
+static struct Token get_current(struct Parser* parser) {
     return parser->token_list->tokens[parser->index];
 }
 
