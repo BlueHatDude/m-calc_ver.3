@@ -174,12 +174,28 @@ bool is_func(const char* str, const int index) {
     return false;
 }
 
-static bool is_op_type(enum TokenType type) {
+bool is_op_type(enum TokenType type) {
     return ((type >= OP_ADD) && (type <= OP_EXP));
 }
 
-static inline void set_token(struct Token* dest, enum TokenType type,
-                             double value) {
+bool tokens_equal(struct Token a, struct Token b) {
+    return (a.type == b.type)
+            && (a.ivalue == b.ivalue)
+            && (a.fvalue == b.fvalue);
+}
+
+bool tokens_arr_equal(struct Token a[], enum TokenType b[], int len) {
+    for (int i = 0; i < len; i++) {
+        if (a[i].type != b[i]) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void set_token(struct Token* dest, enum TokenType type,
+                double value) {
     dest->type = type;
 
     if (type == TYPE_INTEGER) {
@@ -208,8 +224,19 @@ struct TokensList new_list(void) {
     return list;
 }
 
+void clear_list(struct TokensList* list) {
+    list->tkns_pos = 0;
+    list->op_pos = 0;
+    for (unsigned int i = 0; i < list->capacity; i++) {
+        list->tokens[i].type = TYPE_EMPTY;
+        list->tokens[i].ivalue = 0;
+        list->tokens[i].fvalue = 0;
+        list->operators[i] = 0; 
+    }
+}
+
 void add_operator(struct TokensList* list, const char* equ,
-                         int* iterator) {
+                  int* iterator) {
     if (list->tkns_pos < (list->capacity - 1)) {
         const enum TokenType TYPE = char_to_type(equ[*iterator]);
         set_token(&list->tokens[list->tkns_pos], TYPE, 0);
@@ -223,7 +250,7 @@ void add_operator(struct TokensList* list, const char* equ,
 }
 
 void add_number(struct TokensList* list, const char* equ,
-                       int* iterator) {
+                int* iterator) {
     bool is_decimal = false;
     const int START_INDEX = *iterator;
 
@@ -245,7 +272,7 @@ void add_number(struct TokensList* list, const char* equ,
 }
 
 void add_function(struct TokensList* list, const char* equ,
-                         int* iterator) {
+                  int* iterator) {
 
     enum TokenType type = str_to_fn(&equ[*iterator]);
     int len = strlen(fn_type_to_str(type));
@@ -261,7 +288,7 @@ void add_function(struct TokensList* list, const char* equ,
 }
 
 void add_constant(struct TokensList* list, const char* equ,
-                         int* iterator) {
+                  int* iterator) {
     if (string_at("pi", &equ[*iterator])) {
         set_token(&list->tokens[list->tkns_pos], CONSTANT_PI, 0);   
         list->tkns_pos++;
@@ -273,7 +300,7 @@ void add_constant(struct TokensList* list, const char* equ,
     }
 }
 
-static struct Token get_token_at(struct TokensList* list, const unsigned int index) {
+struct Token get_token_at(struct TokensList* list, unsigned int index) {
     if (index >= list->capacity) {
         fprintf(stderr, "Trying to access invalid index of TokensList");
         exit(EXIT_FAILURE);
@@ -282,7 +309,7 @@ static struct Token get_token_at(struct TokensList* list, const unsigned int ind
     return list->tokens[index];
 }
 
-static enum TokenType get_type_at(struct TokensList* list, const unsigned int index) {
+enum TokenType get_type_at(struct TokensList* list, unsigned int index) {
     if (index >= list->capacity) {
         fprintf(stderr, "Trying to access invalid index of TokensList");
         exit(EXIT_FAILURE);
@@ -332,6 +359,16 @@ struct Parser {
     unsigned int index;
 };
 
+// TODO: add real doc comments.
+// handles + and -
+double parse_expression(struct Parser* parser);
+// TODO: add real doc comments.
+// handles * and /
+double parse_term(struct Parser* parser);
+// TODO: add real doc comments.
+// handles nums and ()
+double parse_factor(struct Parser* parser);
+
 struct Parser new_parser(struct TokensList* list) {
     struct Parser parser = {
         .token_list = list,
@@ -341,23 +378,81 @@ struct Parser new_parser(struct TokensList* list) {
     return parser;
 }
 
-static void advance(struct Parser* parser) {
+struct Token get_current(struct Parser* parser) {
+    return parser->token_list->tokens[parser->index]; 
+}
+
+void advance(struct Parser* parser) {
     parser->index++;
 }
 
-static struct Token get_current(struct Parser* parser) {
-    return parser->token_list->tokens[parser->index];
+double parse_expression(struct Parser* parser) {
+    double value = parse_term(parser);
+    struct Token current = get_current(parser);
+
+    if (current.type == OP_ADD) {
+        advance(parser);
+        value += parse_term(parser);
+    } else if (current.type == OP_SUB) {
+        advance(parser);
+        value -= parse_term(parser);
+    } else {
+        fprintf(stderr, "Expected add or sub\n");
+    }
+    return value;
 }
 
-static void eval_expr(struct Parser* parser);
+double parse_term(struct Parser* parser) {
+    double value = parse_factor(parser);
+    struct Token current = get_current(parser);
+    
+    if (current.type == OP_MULT || current.type == OP_DIV) {
+        advance(parser);
+        if (current.type == OP_MULT) {
+            value *= parse_factor(parser);
+        } else if (current.type == OP_DIV) {
+            value /= parse_factor(parser);
+        }
+    } else {
+        return 0.0;
+
+        // fprintf(stderr, "Expected mult or div\n");
+        // exit(EXIT_FAILURE);
+    }
+
+    return value;
+}
+
+double parse_factor(struct Parser* parser) {
+    struct Token current = get_current(parser);
+    if (current.type == TYPE_INTEGER || current.type == TYPE_DECIMAL) {
+        if (current.type == TYPE_INTEGER) {
+            advance(parser);
+            return current.ivalue;
+        } else {
+            advance(parser);
+            return current.fvalue;
+        }
+    } else if (current.type == PAR_LEFT) {
+        advance(parser);
+        double value = parse_expression(parser);
+        advance(parser);
+        return value;
+    } else {
+        fprintf(stderr, "An error occured");
+        exit(EXIT_FAILURE);
+    }
+}
 
 /**
  * @brief generates a parse tree from list of tokens.
  * 
  * @returns A reference to the root of the parse tree.  
  */
-static struct TreeNode* parse(struct Parser* parser) {
-    return NULL;
+double parse(struct TokensList* list) {
+    struct Parser parser = new_parser(list);
+    double result = parse_expression(&parser);
+    return result;
 }
 
 /* ===== Error Handling Functions =====*/
@@ -382,7 +477,7 @@ void write_error(MC3_ErrorCode* err_obj, MC3_ErrorCode code) {
 
 // /* ===== Main Function =====*/
 
-static double eval_tree();
+double eval_tree();
 
 // /**
 //  * @brief evaluates a mathematical expression from a string, returning the
@@ -400,14 +495,13 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
     (void) equ;
     
     struct TokensList tokens_list = new_list();
-    struct Parser parser = new_parser(&tokens_list);
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     tokenize(equ, &tokens_list, &error_code);
     if (error_code != MC3_NO_ERROR)
         goto error_occured;
 
-    parse(&parser);
+    double result = parse(&tokens_list);
 
     /* goto label for consistent error handling */
     error_occured: {
@@ -415,16 +509,24 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode* err) {
         return 0.0;
     }
 
-    return -0.0;
+    return result;
 }
 
 /* ==== Tests ==== */
 
 void test_tokenization(void) {
-    // MC3_ErrorCode error_code = MC3_NO_ERROR;
+    struct TokensList list = new_list();
 
     MLOG_log("Testing Suite: Tokenization");
-    MLOG_log("TODO: not implemented yet. :(");
+
+    clear_list(&list);
+    tokenize("2 + 4 - 6 * 8 / 10 ^ 12", &list, NULL);
+    MLOG_test(tokens_arr_equal(list.tokens,
+        (enum TokenType[]) {TYPE_INTEGER, OP_ADD, TYPE_INTEGER, OP_SUB,
+        TYPE_INTEGER, OP_MULT, TYPE_INTEGER, OP_DIV, TYPE_INTEGER, OP_EXP,
+        TYPE_INTEGER},
+        11
+    ), "2 + 4 - 6 * 8 / 10 ^ 12")
 
     // tokenize("2 + 4 - 6 * 8 / 10 ^ 12", , &error_code);
     // MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
@@ -451,13 +553,17 @@ void test_evaulation(void) {
 
     result = MC3_evaluate("2 + 4", NULL);
     MLOG_test(((int)result) == 6, "2 + 4");
+    MLOG_logf("Result: %lf\n", result);
 
     result = MC3_evaluate("2 * (4 + 8)", NULL);
     MLOG_test(((int) result) == 24, "2 * (4 + 8)");
+    MLOG_logf("Result: %lf\n", result);
 
     result = MC3_evaluate("(2 + 4) * 8", NULL);
     MLOG_test(((int)result) == 48, "(2 + 4) * 8");
+    MLOG_logf("Result: %lf\n", result);
 
     result = MC3_evaluate("(2 + 4) / (6 + 8)", NULL);
     MLOG_test(result == ((double) 6 / 14), "(2 + 4) / (6 + 8)");
+    MLOG_logf("Result: %lf\n", result);
 }
