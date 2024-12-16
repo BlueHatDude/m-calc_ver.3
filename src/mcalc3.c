@@ -420,7 +420,7 @@ struct Token get_current(struct Parser *parser) {
 
 void consume(struct Parser *parser, enum TokenType type) {
     if (get_current(parser).type == type) {
-        MLOG_logf("Consumed token of type: %s", type_to_str(type));
+        // MLOG_logf("Consumed token of type: %s", type_to_str(type));
         parser->index++;
     } else {
         MLOG_errorf("Expected a different type: %d", type);
@@ -577,7 +577,7 @@ void test_tokenization(void) {
     MLOG_test("2 + 4", tokens_arr_equal(
                   list.tokens,
                   (enum TokenType[]){TYPE_INTEGER, OP_ADD, TYPE_INTEGER}, 3));
-    MLOG_array_custom(list.tokens, list.tkns_pos, print_token);
+    // MLOG_array_custom(list.tokens, list.tkns_pos, print_token);
 
     // tokenize("2 + 4 - 6 * 8 / 10 ^ 12", &list, NULL);
     // MLOG_test(tokens_arr_equal(list.tokens,
@@ -609,7 +609,7 @@ void test_evaulation(void) {
 
     result = MC3_evaluate("2 + 4", NULL);
     MLOG_test("2 + 4", ((int) result) == 6);
-    MLOG_logf("Result: %lf\n", result);
+    // MLOG_logf("Result: %lf\n", result);
 
     // result = MC3_evaluate("2 * (4 + 8)", NULL);
     // MLOG_test(((int)result) == 24, "2 * (4 + 8)");

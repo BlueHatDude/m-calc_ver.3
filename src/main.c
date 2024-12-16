@@ -9,7 +9,7 @@ int main(const int argc, const char* argv[]) {
         double result = MC3_evaluate(argv[i], &error);
 
         if (!error_occured(&error)) {
-            printf("%s: %lf\n", argv[i], result);
+            printf("%s = %lf\n", argv[i], result);
         }
     }
 }
