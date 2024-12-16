@@ -76,12 +76,6 @@ struct TokensList {
     unsigned int op_pos;
 };
 
-struct TreeNode {
-    struct Token *token;
-    struct Token *left_operand;
-    struct Token *right_operand;
-};
-
 /* ===== Token Functions =====*/
 
 const char *type_to_str(enum TokenType type) {
@@ -423,7 +417,9 @@ void consume(struct Parser *parser, enum TokenType type) {
         // MLOG_logf("Consumed token of type: %s", type_to_str(type));
         parser->index++;
     } else {
-        MLOG_errorf("Expected a different type: %d", type);
+        MLOG_errorf("Expected %s but found %s | Is equal: %d & %d",
+                    type_to_str(get_current(parser).type), type_to_str(type),
+                    get_current(parser).type, type);
         exit(EXIT_FAILURE);
     }
 }
@@ -482,7 +478,7 @@ double parse_numpar(struct Parser *parser) {
         }
     } else if (current.type == PAR_LEFT) {
         consume(parser, PAR_LEFT);
-        value = parse_numpar(parser);
+        value = parse_addsub(parser);
         consume(parser, PAR_RIGHT);
         return value;
     } else {
@@ -557,7 +553,7 @@ double MC3_evaluate(const char *equ, MC3_ErrorCode *err) {
 
 /* ==== Tests ==== */
 
-void print_token(struct Token* token) {
+void print_token(struct Token *token) {
     if (token->type == TYPE_INTEGER) {
         printf("INTEGER(%lld)", token->ivalue);
     } else if (token->type == TYPE_DECIMAL) {
@@ -574,7 +570,8 @@ void test_tokenization(void) {
 
     clear_list(&list);
     tokenize("2 + 4", &list, NULL);
-    MLOG_test("2 + 4", tokens_arr_equal(
+    MLOG_test("2 + 4",
+              tokens_arr_equal(
                   list.tokens,
                   (enum TokenType[]){TYPE_INTEGER, OP_ADD, TYPE_INTEGER}, 3));
     // MLOG_array_custom(list.tokens, list.tkns_pos, print_token);
@@ -608,7 +605,7 @@ void test_evaulation(void) {
     MLOG_log("Testing Suite: Evaluation");
 
     result = MC3_evaluate("2 + 4", NULL);
-    MLOG_test("2 + 4", ((int) result) == 6);
+    MLOG_test("2 + 4", ((int)result) == 6);
     // MLOG_logf("Result: %lf\n", result);
 
     // result = MC3_evaluate("2 * (4 + 8)", NULL);
