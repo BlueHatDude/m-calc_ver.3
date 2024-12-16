@@ -2,6 +2,7 @@
 #include "mlogging.h"
 
 #include <ctype.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
@@ -297,6 +298,8 @@ struct Parser {
     unsigned int index;
 };
 
+double parse_exp(struct Parser *parser);
+
 /**
  * @brief Parses num/par and evaluates any adjacent multiplication/divison.
  */
@@ -337,8 +340,21 @@ void consume(struct Parser *parser, enum TokenType type) {
     }
 }
 
-double parse_multdiv(struct Parser *parser) {
+double parse_exp(struct Parser *parser) {
     double value = parse_numpar(parser);
+    struct Token current = get_current(parser);
+
+    while (current.type == OP_EXP) {
+        consume(parser, OP_EXP);
+        value = pow(value, parse_numpar(parser));
+        current = get_current(parser);
+    }
+
+    return value;
+}
+
+double parse_multdiv(struct Parser *parser) {
+    double value = parse_exp(parser);
     struct Token current = get_current(parser);
 
     while (current.type == OP_MULT || current.type == OP_DIV) {

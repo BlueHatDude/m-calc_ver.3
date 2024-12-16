@@ -27,13 +27,6 @@ they are being used as input into `mcalc3`.
 
 >> mcalc3 "2 ^ 5"
 2 ^ 5 = 32.0
-
->> mcalc3 "sqrt(25)"
-sqrt(25) = 5.0
-
->> mcalc3 "cos(PI/3)" "ln(e^5)"
-cos(PI/3) = 0.5
-ln(e^5) = 5.0
 ```
 
 ## Supported Functions
@@ -42,15 +35,11 @@ ln(e^5) = 5.0
     - `mcalc3` does not support implicit multiplication (e.g. `(2+5)(3)`)
 - Grouping: `(` and `)`
     - Do not use `[]` or `{}`.
-- Trignonometric functions: `sin`, `cos`, `tan`, `arcsin`, `arccos`, `arctan`.
-    - inverse functions are not currently implemented.
-- Logarithms: `ln` and `log`
-- Constants: `pi` and `e`
-    - do not use π character. 
 
 ## Important Notes
 - `mcalc3` does not support variables (e.g. `2x + 5` is not a valid expression).
 - `mcalc3` does not support unicode, and you may encounter problems if you try
 to use it. 
-- `mcalc3` is current a WIP. You will not see proper results if you try to use 
-it now. 
+- `mcalc3` is finsihed, but it is not a fully featured scientific calculator.
+These features will be added in `mcalc4`, because I want to completely rewrite 
+this project. 
