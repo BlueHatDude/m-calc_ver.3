@@ -8,7 +8,7 @@ int main(const int argc, const char* argv[]) {
     for (int i = 1; i < argc; i++) {
         double result = MC3_evaluate(argv[i], &error);
 
-        if (!error_has_occured(&error)) {
+        if (!error_occured(&error)) {
             printf("%s: %lf\n", argv[i], result);
         }
     }

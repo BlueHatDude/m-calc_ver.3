@@ -160,7 +160,7 @@
         #define MLOG_array_str(arr, size) mlog_array_str(arr, size);
         #define MLOG_array_custom(arr, size, fmt_fn) {\
                     printf("[LOG]: [");\
-                    for (int i = 0; i < size; i++) {\
+                    for (size_t i = 0; i < size; i++) {\
                         fmt_fn(&arr[i]);\
                         printf((i == (size - 1)) ? "" : ", " );\
                         fflush(stdout);\

@@ -17,7 +17,6 @@
 
     /* ==== Tests ==== */
     void test_tokenization(void);
-    void test_parsing(void);
     void test_evaulation(void);
 
 #endif /* MCALCULATOR_VER3_H_ */

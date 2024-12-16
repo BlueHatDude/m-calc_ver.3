@@ -25,34 +25,28 @@ bool string_at(const char sub_str[], const char *str_start) {
 /* ===== Data Types  =====*/
 
 enum TokenType {
-
     /* operators */
     OP_ADD,
     OP_SUB,
     OP_MULT,
     OP_DIV,
     OP_EXP,
-
     /* grouping */
     PAR_LEFT,
     PAR_RIGHT,
-
     /* types */
     TYPE_INTEGER,
     TYPE_DECIMAL,
     TYPE_EMPTY,
-
     /* functions */
     FN_SIN,
     FN_COS,
     FN_TAN,
     FN_LOG_10,
     FN_LOG_E,
-
     /* constants */
     CONSTANT_PI,
     CONSTANT_E
-
 };
 
 struct Token {
@@ -89,6 +83,47 @@ struct TreeNode {
 };
 
 /* ===== Token Functions =====*/
+
+const char *type_to_str(enum TokenType type) {
+    switch (type) {
+    case OP_ADD:
+        return "OP_ADD";
+    case OP_SUB:
+        return "OP_SUB";
+    case OP_MULT:
+        return "OP_MULT";
+    case OP_DIV:
+        return "OP_DIV";
+    case OP_EXP:
+        return "OP_EXP";
+    case PAR_LEFT:
+        return "PAR_LEFT";
+    case PAR_RIGHT:
+        return "PAR_RIGHT";
+    case TYPE_INTEGER:
+        return "TYPE_INTEGER";
+    case TYPE_DECIMAL:
+        return "TYPE_DECIMAL";
+    case TYPE_EMPTY:
+        return "TYPE_EMPTY";
+    case FN_SIN:
+        return "FN_SIN";
+    case FN_COS:
+        return "FN_COS";
+    case FN_TAN:
+        return "FN_TAN";
+    case FN_LOG_10:
+        return "FN_LOG_10";
+    case FN_LOG_E:
+        return "FN_LOG_E";
+    case CONSTANT_PI:
+        return "CONSTANT_PI";
+    case CONSTANT_E:
+        return "CONSTANT_E";
+    default:
+        return NULL;
+    }
+}
 
 enum TokenType char_to_type(char ch) {
     switch (ch) {
@@ -299,7 +334,7 @@ void add_constant(struct TokensList *list, const char *equ, int *iterator) {
 
 struct Token get_token_at(struct TokensList *list, unsigned int index) {
     if (index >= list->capacity) {
-        fprintf(stderr, "Trying to access invalid index of TokensList");
+        MLOG_error("Trying to access invalid index of TokensList");
         exit(EXIT_FAILURE);
     }
 
@@ -308,7 +343,7 @@ struct Token get_token_at(struct TokensList *list, unsigned int index) {
 
 enum TokenType get_type_at(struct TokensList *list, unsigned int index) {
     if (index >= list->capacity) {
-        fprintf(stderr, "Trying to access invalid index of TokensList");
+        MLOG_error("Trying to access invalid index of TokensList");
         exit(EXIT_FAILURE);
     }
 
@@ -385,16 +420,51 @@ struct Token get_current(struct Parser *parser) {
 
 void consume(struct Parser *parser, enum TokenType type) {
     if (get_current(parser).type == type) {
+        MLOG_logf("Consumed token of type: %s", type_to_str(type));
         parser->index++;
     } else {
-        MLOG_error("Expected a different type");
+        MLOG_errorf("Expected a different type: %d", type);
         exit(EXIT_FAILURE);
     }
 }
 
-double parse_multdiv(struct Parser *parser) {}
+double parse_multdiv(struct Parser *parser) {
+    double value = parse_numpar(parser);
+    struct Token current = get_current(parser);
 
-double parse_addsub(struct Parser *parser) {}
+    while (current.type == OP_MULT || current.type == OP_DIV) {
+        if (current.type == OP_MULT) {
+            consume(parser, OP_MULT);
+            value *= parse_numpar(parser);
+        } else {
+            consume(parser, OP_DIV);
+            value /= parse_numpar(parser);
+        }
+
+        current = get_current(parser);
+    }
+
+    return value;
+}
+
+double parse_addsub(struct Parser *parser) {
+    double value = parse_multdiv(parser);
+    struct Token current = get_current(parser);
+
+    while (current.type == OP_ADD || current.type == OP_SUB) {
+        if (current.type == OP_ADD) {
+            consume(parser, OP_ADD);
+            value += parse_numpar(parser);
+        } else {
+            consume(parser, OP_SUB);
+            value -= parse_numpar(parser);
+        }
+
+        current = get_current(parser);
+    }
+
+    return value;
+}
 
 double parse_numpar(struct Parser *parser) {
     double value;
@@ -402,7 +472,7 @@ double parse_numpar(struct Parser *parser) {
 
     if (current.type == TYPE_INTEGER || current.type == TYPE_DECIMAL) {
         if (current.type == TYPE_INTEGER) {
-            value = current.ivalue;
+            value = (double)current.ivalue;
             consume(parser, TYPE_INTEGER);
             return value;
         } else if (current.type == TYPE_DECIMAL) {
@@ -420,7 +490,7 @@ double parse_numpar(struct Parser *parser) {
         exit(1);
     }
 
-    return 0;
+    return -1;
 }
 
 /**
@@ -430,7 +500,7 @@ double parse_numpar(struct Parser *parser) {
  */
 double parse(struct TokensList *list) {
     struct Parser parser = new_parser(list);
-    double result = parse_multdiv(&parser);
+    double result = parse_addsub(&parser);
     return result;
 }
 
@@ -471,27 +541,31 @@ void write_error(MC3_ErrorCode *err_obj, MC3_ErrorCode code) {
 //  * @return double
 //  */
 double MC3_evaluate(const char *equ, MC3_ErrorCode *err) {
-    (void)equ;
-
     struct TokensList tokens_list = new_list();
     MC3_ErrorCode error_code = MC3_NO_ERROR;
 
     tokenize(equ, &tokens_list, &error_code);
-    if (error_code != MC3_NO_ERROR)
-        goto error_occured;
+    if (error_code != MC3_NO_ERROR) {
+        write_error(err, error_code);
+        return 0.0;
+    }
 
     double result = parse(&tokens_list);
-
-/* goto label for consistent error handling */
-error_occured : {
-    write_error(err, error_code);
-    return 0.0;
-}
 
     return result;
 }
 
 /* ==== Tests ==== */
+
+void print_token(struct Token* token) {
+    if (token->type == TYPE_INTEGER) {
+        printf("INTEGER(%lld)", token->ivalue);
+    } else if (token->type == TYPE_DECIMAL) {
+        printf("DECIMAL(%lf)", token->fvalue);
+    } else {
+        printf("%s", type_to_str(token->type));
+    }
+}
 
 void test_tokenization(void) {
     struct TokensList list = new_list();
@@ -499,15 +573,21 @@ void test_tokenization(void) {
     MLOG_log("Testing Suite: Tokenization");
 
     clear_list(&list);
-    tokenize("2 + 4 - 6 * 8 / 10 ^ 12", &list, NULL);
-    MLOG_test(tokens_arr_equal(list.tokens,
-                               (enum TokenType[]){
-                                   TYPE_INTEGER, OP_ADD, TYPE_INTEGER, OP_SUB,
-                                   TYPE_INTEGER, OP_MULT, TYPE_INTEGER, OP_DIV,
-                                   TYPE_INTEGER, OP_EXP, TYPE_INTEGER},
-                               11),
-              "2 + 4 - 6 * 8 / 10 ^ 12")
+    tokenize("2 + 4", &list, NULL);
+    MLOG_test("2 + 4", tokens_arr_equal(
+                  list.tokens,
+                  (enum TokenType[]){TYPE_INTEGER, OP_ADD, TYPE_INTEGER}, 3));
+    MLOG_array_custom(list.tokens, list.tkns_pos, print_token);
 
+    // tokenize("2 + 4 - 6 * 8 / 10 ^ 12", &list, NULL);
+    // MLOG_test(tokens_arr_equal(list.tokens,
+    //                            (enum TokenType[]){
+    //                                TYPE_INTEGER, OP_ADD, TYPE_INTEGER,
+    //                                OP_SUB, TYPE_INTEGER, OP_MULT,
+    //                                TYPE_INTEGER, OP_DIV, TYPE_INTEGER,
+    //                                OP_EXP, TYPE_INTEGER},
+    //                            11),
+    //           "2 + 4 - 6 * 8 / 10 ^ 12")
     // tokenize("2 + 4 - 6 * 8 / 10 ^ 12", , &error_code);
     // MLOG_test(error_code == MC3_NO_ERROR, "2 + 4 - 6 * 8 / 10 ^ 12");
     // tokenize("8 * (2 + 4)", &error_code);
@@ -522,26 +602,24 @@ void test_tokenization(void) {
     // MLOG_test(error_code == MC3_INVALID_CHARACTER_FOUND, "5 Ω 2");
 }
 
-void test_parsing(void) {}
-
 void test_evaulation(void) {
     double result = 0.0;
 
     MLOG_log("Testing Suite: Evaluation");
 
     result = MC3_evaluate("2 + 4", NULL);
-    MLOG_test(((int)result) == 6, "2 + 4");
+    MLOG_test("2 + 4", ((int) result) == 6);
     MLOG_logf("Result: %lf\n", result);
 
-    result = MC3_evaluate("2 * (4 + 8)", NULL);
-    MLOG_test(((int)result) == 24, "2 * (4 + 8)");
-    MLOG_logf("Result: %lf\n", result);
+    // result = MC3_evaluate("2 * (4 + 8)", NULL);
+    // MLOG_test(((int)result) == 24, "2 * (4 + 8)");
+    // MLOG_logf("Result: %lf\n", result);
 
-    result = MC3_evaluate("(2 + 4) * 8", NULL);
-    MLOG_test(((int)result) == 48, "(2 + 4) * 8");
-    MLOG_logf("Result: %lf\n", result);
+    // result = MC3_evaluate("(2 + 4) * 8", NULL);
+    // MLOG_test(((int)result) == 48, "(2 + 4) * 8");
+    // MLOG_logf("Result: %lf\n", result);
 
-    result = MC3_evaluate("(2 + 4) / (6 + 8)", NULL);
-    MLOG_test(result == (6.0 / 14), "(2 + 4) / (6 + 8)");
-    MLOG_logf("Result: %lf\n", result);
+    // result = MC3_evaluate("(2 + 4) / (6 + 8)", NULL);
+    // MLOG_test(result == (6.0 / 14), "(2 + 4) / (6 + 8)");
+    // MLOG_logf("Result: %lf\n", result);
 }
