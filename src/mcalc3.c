@@ -38,15 +38,6 @@ enum TokenType {
     TYPE_INTEGER,
     TYPE_DECIMAL,
     TYPE_EMPTY,
-    /* functions */
-    FN_SIN,
-    FN_COS,
-    FN_TAN,
-    FN_LOG_10,
-    FN_LOG_E,
-    /* constants */
-    CONSTANT_PI,
-    CONSTANT_E
 };
 
 struct Token {
@@ -100,20 +91,6 @@ const char *type_to_str(enum TokenType type) {
         return "TYPE_DECIMAL";
     case TYPE_EMPTY:
         return "TYPE_EMPTY";
-    case FN_SIN:
-        return "FN_SIN";
-    case FN_COS:
-        return "FN_COS";
-    case FN_TAN:
-        return "FN_TAN";
-    case FN_LOG_10:
-        return "FN_LOG_10";
-    case FN_LOG_E:
-        return "FN_LOG_E";
-    case CONSTANT_PI:
-        return "CONSTANT_PI";
-    case CONSTANT_E:
-        return "CONSTANT_E";
     default:
         return NULL;
     }
@@ -137,39 +114,6 @@ enum TokenType char_to_type(char ch) {
         return PAR_RIGHT;
     default:
         return TYPE_EMPTY;
-    }
-}
-
-enum TokenType str_to_fn(const char *str) {
-    if (strncmp(str, "sin", 3) == 0) {
-        return FN_SIN;
-    } else if (strncmp(str, "cos", 3) == 0) {
-        return FN_COS;
-    } else if (strncmp(str, "tan", 3) == 0) {
-        return FN_TAN;
-    } else if (strncmp(str, "log", 3) == 0) {
-        return FN_LOG_10;
-    } else if (strncmp(str, "ln", 2) == 0) {
-        return FN_LOG_E;
-    } else {
-        return TYPE_EMPTY;
-    }
-}
-
-const char *fn_type_to_str(enum TokenType type) {
-    switch (type) {
-    case FN_SIN:
-        return "sin";
-    case FN_COS:
-        return "cos";
-    case FN_TAN:
-        return "tan";
-    case FN_LOG_10:
-        return "log";
-    case FN_LOG_E:
-        return "ln";
-    default:
-        return NULL;
     }
 }
 
@@ -299,33 +243,6 @@ void add_number(struct TokensList *list, const char *equ, int *iterator) {
     }
 }
 
-void add_function(struct TokensList *list, const char *equ, int *iterator) {
-
-    enum TokenType type = str_to_fn(&equ[*iterator]);
-    int len = strlen(fn_type_to_str(type));
-
-    if (type == TYPE_EMPTY) {
-        /* string was not a function */
-        // TODO: add functionality
-    } else {
-        set_token(&list->tokens[list->tkns_pos], type, 0);
-        list->tkns_pos++;
-        *iterator += len;
-    }
-}
-
-void add_constant(struct TokensList *list, const char *equ, int *iterator) {
-    if (string_at("pi", &equ[*iterator])) {
-        set_token(&list->tokens[list->tkns_pos], CONSTANT_PI, 0);
-        list->tkns_pos++;
-        *iterator += 2;
-    } else if (string_at("e", &equ[*iterator])) {
-        set_token(&list->tokens[list->tkns_pos], CONSTANT_E, 0);
-        list->tkns_pos++;
-        *iterator += 1;
-    }
-}
-
 struct Token get_token_at(struct TokensList *list, unsigned int index) {
     if (index >= list->capacity) {
         MLOG_error("Trying to access invalid index of TokensList");
@@ -362,10 +279,6 @@ void tokenize(const char *equ, struct TokensList *list, MC3_ErrorCode *err) {
             add_operator(list, equ, &i);
         } else if (isdigit(equ[i])) {
             add_number(list, equ, &i);
-        } else if (is_func(equ, i)) {
-            add_function(list, equ, &i);
-        } else if (is_constant(equ, i)) {
-            add_constant(list, equ, &i);
         } else if (equ[i] == ' ') {
             i++;
         } else {
