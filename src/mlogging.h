@@ -74,7 +74,6 @@
         puts("]");
     }
 
-
     static void mlog_array_double(double arr[], size_t size) {
         printf("[LOG]: [");
         for (size_t i = 0; i < size; i++) {
@@ -127,98 +126,84 @@
         va_end(args);
     }
 
-
-    /* test logging */
-
-    static void mlog_test(int cond, const char* tag) {
+    /* testing */
+    static int mlog_test(int cond, const char* tag) {
         if (cond) {
             printf("[TEST] %s: %s[PASSED]%s\n", tag, TC_GREEN, NO_COLOR);
+            return 0;
         } else {
             printf("[TEST] %s: %s[FAILED]%s\n", tag, TC_RED, NO_COLOR);
+            return 1;
         }
     }
 
-    static void mlog_testf(int cond, const char* tag, ...) {
-        va_list args;
-        va_start(args, tag);
-        printf("[TEST] ");
-        vprintf(tag, args);
-
-        if (cond) {
-            puts(": " TC_GREEN "[PASSED]" NO_COLOR);
-        } else {
-            puts(": " TC_RED "[FAILED]" NO_COLOR);
-        }
-
-        va_end(args);
-    }
-
-    static void mlog_testc(const char* color, int cond, const char* tag) {
+    static int mlog_testc(const char* color, int cond, const char* tag) {
         if (cond) {
             printf("%s[TEST] %s: %s[PASSED]%s\n", color, tag, TC_GREEN, NO_COLOR);
+            return 0;
         } else {
             printf("%s[TEST] %s: %s[FAILED]%s\n", color, tag, TC_RED, NO_COLOR);
+            return 1;
         }
-    }
-
-    static void mlog_testfc(const char* color, int cond, const char* tag, ...) {
-        va_list args;
-        va_start(args, tag);
-        printf("%s[TEST] ", color);
-        vprintf(tag, args);
-
-        if (cond) {
-            puts(": " TC_GREEN "[PASSED]" NO_COLOR);
-        } else {
-            puts(": " TC_RED "[FAILED]" NO_COLOR);
-        }
-
-        va_end(args);
     }
 
     #ifndef MLOGOFF
         /* standard */
         #define MLOG_log(msg) mlog_log(msg);
         #define MLOG_error(msg) mlog_error(msg);
-        #define MLOG_test(cond, tag) mlog_test(cond, tag);
+        #define MLOG_test(tag, cond) mlog_test(cond, tag);
 
         /* arrays */
         #define MLOG_array_int(arr, size) mlog_array_int(arr, size);
         #define MLOG_array_char(arr, size) mlog_array_char(arr, size);
         #define MLOG_array_double(arr, size) mlog_array_double(arr, size);
         #define MLOG_array_str(arr, size) mlog_array_str(arr, size);
+        #define MLOG_array_custom(arr, size, fmt_fn) {\
+                    printf("[LOG]: [");\
+                    for (int i = 0; i < size; i++) {\
+                        fmt_fn(&arr[i]);\
+                        printf((i == (size - 1)) ? "" : ", " );\
+                        fflush(stdout);\
+                    };\
+                    puts("]");\
+                }
 
         /* format */
         #define MLOG_logf(msg, ...) mlog_logf(msg, __VA_ARGS__);
         #define MLOG_errorf(msg, ...) mlog_errorf(msg, __VA_ARGS__);
-        #define MLOG_testf(cond, tag, ...) mlog_testf(cond, tag, __VA_ARGS__);
 
         /* color */
         #define MLOG_logc(color, msg) mlog_logc(color, msg);
         #define MLOG_errorc(color, msg) mlog_errorc(color, msg);
-        #define MLOG_testc(color, cond, tag) mlog_testc(color, cond, tag);
+        #define MLOG_testc(tag, color, cond) mlog_testc(color, cond, tag);
 
         /* color and format */
         #define MLOG_logfc(color, msg, ...) mlog_logfc(color, msg, __VA_ARGS__);
         #define MLOG_errorfc(color, msg, ...) mlog_errorfc(color, msg, __VA_ARGS__);
-        #define MLOG_testfc(color, cond, tag, ...) mlog_testfc(color, cond, tag, __VA_ARGS__);
-    #endif
-
-    #ifdef MLOGOFF
+    #else
+        /* standard */
         #define MLOG_log(msg) ((void) 0);
         #define MLOG_error(msg) ((void) 0);
-        #define MLOG_test(cond, msg) ((void) 0);
+        #define MLOG_test(tag, cond) ((void) 0);
 
+        /* arrays */
+        #define MLOG_array_int(arr, size) ((void) 0);
+        #define MLOG_array_char(arr, size) ((void) 0);
+        #define MLOG_array_double(arr, size) ((void) 0);
+        #define MLOG_array_str(arr, size) ((void) 0);
+        #define MLOG_array_custom(arr, size, fmt_fn) ((void) 0);
+
+        /* format */
         #define MLOG_logf(msg, ...) ((void) 0);
         #define MLOG_errorf(msg, ...) ((void) 0);
-        #define MLOG_testf(cond, msg) ((void) 0);
 
+        /* color */
         #define MLOG_logc(color, msg) ((void) 0);
         #define MLOG_errorc(color, msg) ((void) 0);
-        #define MLOG_testc(color, cond, msg) ((void) 0);
+        #define MLOG_testc(color, cond, tag) ((void) 0);
 
+        /* color and format */
         #define MLOG_logfc(color, msg, ...) ((void) 0);
         #define MLOG_errorfc(color, msg, ...) ((void) 0);
-        #define MLOG_testfc(color, cond, msg, ...) ((void) 0);
     #endif
 #endif
