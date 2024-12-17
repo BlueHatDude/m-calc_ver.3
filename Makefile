@@ -7,11 +7,11 @@ STANDARD=-std=c18
 
 
 app: mcalc3.o src/main.c
-	$(CC) -o mcalc3 mcalc3.o src/main.c $(STANDARD) $(WARNINGS)
+	$(CC) -o mcalc3 mcalc3.o src/main.c -lm $(STANDARD) $(WARNINGS)
 	rm *.o
 
 mcalc3.o: src/mcalc3.c
-	$(CC) -c src/mcalc3.c $(WARNINGS) $(STANDARD)
+	$(CC) -c src/mcalc3.c -lm $(WARNINGS) $(STANDARD)
 
 tests: src/tests.c mcalc3.o
 	$(CC) -o tests src/tests.c mcalc3.o $(WARNINGS) $(STANDARD)
